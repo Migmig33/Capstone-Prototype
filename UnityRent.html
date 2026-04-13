@@ -1,0 +1,1178 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UnityRent</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Fraunces', 'Georgia', 'serif'],
+            body: ['DM Sans', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            navy: '#0f1b2d',
+            cream: '#faf8f4',
+            warm: '#f0ebe3',
+            accent: '#c8553d',
+            sage: '#4a7c6f',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    * { box-sizing: border-box; }
+    .chip-active { background-color: #0f1b2d !important; color: #faf8f4 !important; border-color: #0f1b2d !important; }
+    .unit-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .unit-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(15,27,45,0.12); }
+    .chat-bubble { animation: bubbleIn 0.3s ease-out; }
+    @keyframes bubbleIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .btn-press:active { transform: scale(0.97); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #c4bfb6; border-radius: 3px; }
+
+    /* ---- Calendar ---- */
+    .cal-day {
+      width: 100%; aspect-ratio: 1; min-height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; font-size: 12px; font-weight: 600;
+      border: 2px solid transparent; transition: all 0.12s ease;
+    }
+    .cal-day.avail  { background:#dcfce7; border-color:#4ade80; color:#166534; cursor:pointer; }
+    .cal-day.avail:hover { background:#bbf7d0; border-color:#22c55e; transform:scale(1.08); }
+    .cal-day.taken  { background:#fee2e2; border-color:#f87171; color:#991b1b; cursor:not-allowed; }
+    .cal-day.past   { background:#f3f4f6; color:#d1d5db; cursor:not-allowed; }
+    .cal-day.selday { background:#0f1b2d !important; border-color:#0f1b2d !important; color:#faf8f4 !important; }
+    .cal-day.today-ring { box-shadow: 0 0 0 2px #c8553d; }
+    .cal-day.empty  { background:transparent; border:none; cursor:default; }
+
+    /* ---- Time slots ---- */
+    .tslot {
+      padding: 8px 4px; border-radius: 10px; border: 2px solid #f0ebe3;
+      font-size: 12px; font-weight: 600; text-align: center;
+      cursor: pointer; background: white; color: #0f1b2d;
+      transition: all 0.12s ease;
+    }
+    .tslot:hover:not([disabled]) { border-color:#4a7c6f; background:#f0fdf4; color:#4a7c6f; }
+    .tslot.tsel   { background:#0f1b2d; border-color:#0f1b2d; color:#faf8f4; }
+    .tslot.ttaken { background:#fee2e2; border-color:#f87171; color:#991b1b; cursor:not-allowed; text-decoration:line-through; opacity:.75; }
+    .tslot.tpast  { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; opacity:.6; }
+  </style>
+</head>
+<body class="h-full bg-cream font-body text-navy">
+<div id="app" class="h-full w-full overflow-auto">
+
+  <!-- ====== PUBLIC PORTAL ====== -->
+  <div id="public-portal">
+    <nav class="sticky top-0 z-50 bg-cream border-b border-warm px-4 md:px-6 py-3 flex items-center justify-between" style="min-height:56px">
+      <a href="#" onclick="navigateTo('home')" class="font-display text-xl md:text-2xl font-bold tracking-tight" id="nav-brand">UnityRent</a>
+      <div class="flex items-center gap-1 md:gap-2">
+        <button onclick="navigateTo('home')" class="nav-link px-3 py-2 rounded-xl text-sm font-medium hover:bg-warm transition-colors btn-press" data-nav="home">Home</button>
+        <button onclick="navigateTo('bookings')" class="nav-link px-3 py-2 rounded-xl text-sm font-medium hover:bg-warm transition-colors btn-press flex items-center gap-1" data-nav="bookings">
+          <i class="fas fa-calendar text-xs"></i> <span class="hidden sm:inline">My Bookings</span><span class="sm:hidden">Bookings</span>
+        </button>
+        <button onclick="toggleChat()" class="px-3 md:px-4 py-2 rounded-xl text-sm font-semibold bg-navy text-cream hover:bg-opacity-90 transition-colors btn-press flex items-center gap-1 shadow-md">
+          <i class="fas fa-comments text-xs"></i> <span class="hidden sm:inline">Ask AI</span><span class="sm:hidden">AI</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- HOME -->
+    <div id="view-home" class="fade-in">
+      <section class="px-4 md:px-6 py-12 md:py-24 max-w-5xl mx-auto text-center">
+        <h1 id="hero-headline" class="font-display text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-5">Find Your Perfect Condo</h1>
+        <p id="hero-subtext" class="text-lg sm:text-xl text-navy/60 max-w-2xl mx-auto mb-8">Browse premium condominiums with transparent pricing, verified amenities, and instant viewing requests.</p>
+        <button onclick="navigateTo('units')" class="px-8 py-4 bg-accent text-cream text-xl font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all btn-press">Browse Available Units →</button>
+      </section>
+    </div>
+
+    <!-- UNITS -->
+    <div id="view-units" class="fade-in hidden">
+      <section class="px-4 md:px-6 py-6 md:py-10 max-w-6xl mx-auto">
+        <h2 class="font-display text-2xl md:text-3xl font-bold mb-6">Available Condos</h2>
+        <div class="mb-8 space-y-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm font-semibold">Budget:</span>
+            <button onclick="setFilter('price','all')"    class="filter-chip-price px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press chip-active" data-val="all">All</button>
+            <button onclick="setFilter('price','low')"    class="filter-chip-price px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="low">Under ₱25k</button>
+            <button onclick="setFilter('price','mid')"    class="filter-chip-price px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="mid">₱25k–₱40k</button>
+            <button onclick="setFilter('price','high')"   class="filter-chip-price px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="high">₱40k+</button>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm font-semibold">Bedrooms:</span>
+            <button onclick="setFilter('beds','all')"     class="filter-chip-beds px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press chip-active" data-val="all">All</button>
+            <button onclick="setFilter('beds','studio')"  class="filter-chip-beds px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="studio">Studio</button>
+            <button onclick="setFilter('beds','1')"       class="filter-chip-beds px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="1">1 BR</button>
+            <button onclick="setFilter('beds','2')"       class="filter-chip-beds px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="2">2 BR</button>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm font-semibold">Amenity:</span>
+            <!-- data-val uses Title Case to match unit.amenities directly — no normalization needed -->
+            <button onclick="setFilter('amenity','all')"      class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press chip-active" data-val="all">All</button>
+            <button onclick="setFilter('amenity','Pool')"     class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Pool">🏊 Pool</button>
+            <button onclick="setFilter('amenity','Gym')"      class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Gym">🏋️ Gym</button>
+            <button onclick="setFilter('amenity','Parking')"  class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Parking">🅿️ Parking</button>
+          </div>
+        </div>
+        <div id="units-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"></div>
+        <div id="no-units" class="hidden text-center py-16 text-xl text-navy/50">No units match your filters.</div>
+      </section>
+    </div>
+
+    <!-- DETAIL -->
+    <div id="view-detail" class="fade-in hidden">
+      <section class="px-4 md:px-6 py-6 max-w-4xl mx-auto">
+        <button onclick="navigateTo('units')" class="mb-6 px-4 py-2 rounded-xl text-sm font-medium bg-warm hover:bg-navy/10 transition-colors btn-press flex items-center gap-2">
+          <i class="fas fa-arrow-left text-xs"></i> Back to Units
+        </button>
+        <div id="detail-content"></div>
+      </section>
+    </div>
+
+    <!-- MY BOOKINGS -->
+    <div id="view-bookings" class="fade-in hidden">
+      <section class="px-4 md:px-6 py-6 max-w-4xl mx-auto">
+        <h2 class="font-display text-2xl md:text-3xl font-bold mb-1">Your Booking Requests</h2>
+        <p class="text-navy/50 text-sm mb-8">View and manage your scheduled viewings</p>
+        <div id="guest-bookings-container" class="space-y-4"></div>
+      </section>
+    </div>
+
+    <!-- CHATBOT -->
+    <div id="chat-panel" class="fixed bottom-0 right-0 z-50 hidden" style="width:100%;max-width:400px;height:68%;max-height:100%">
+      <div class="bg-white rounded-t-3xl shadow-2xl border border-warm flex flex-col h-full">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-warm bg-navy rounded-t-3xl">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-sage flex items-center justify-center">
+              <i class="fas fa-robot text-xs" style="color:#faf8f4"></i>
+            </div>
+            <div>
+              <div class="text-cream font-semibold text-sm">UnityRent AI</div>
+              <div class="text-cream/50 text-xs">Online now</div>
+            </div>
+          </div>
+          <button onclick="toggleChat()" class="text-cream/70 hover:text-cream p-1.5"><i class="fas fa-times text-sm"></i></button>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-auto p-4 space-y-3" style="scroll-behavior:smooth"></div>
+        <div class="p-3 border-t border-warm">
+          <form onsubmit="handleChatSend(event)" class="flex gap-2">
+            <input id="chat-input" type="text" placeholder="Ask about condos…" class="flex-1 px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none transition-colors">
+            <button type="submit" class="px-4 py-2.5 bg-accent text-cream rounded-xl text-sm font-semibold hover:bg-opacity-90 transition-colors btn-press">
+              <i class="fas fa-paper-plane text-xs"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <footer class="px-6 py-8 text-center border-t border-warm mt-12">
+      <p class="text-navy/40 text-sm">© 2025 UnityRent. <button onclick="navigateTo('admin-login')" class="underline hover:text-navy/60 transition-colors">Owner Portal</button></p>
+    </footer>
+  </div>
+
+  <!-- ====== ADMIN LOGIN ====== -->
+  <div id="admin-login-view" class="hidden min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-xl border border-warm p-8 md:p-10 w-full max-w-md fade-in">
+      <h2 class="font-display text-3xl font-bold mb-2 text-center">Owner Portal</h2>
+      <p class="text-navy/50 text-base text-center mb-8">Access your property dashboard</p>
+      <form onsubmit="handleAdminLogin(event)" class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium mb-2">Email</label>
+          <input id="admin-email" type="email" value="admin@unityrent.com" class="w-full px-4 py-3 rounded-xl border-2 border-warm text-base focus:border-navy focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">PIN Code</label>
+          <input id="admin-pin" type="text" inputmode="numeric" maxlength="4" placeholder="4-digit PIN" class="w-full px-4 py-3 rounded-xl border-2 border-warm text-base focus:border-navy focus:outline-none tracking-[0.5em] text-center">
+        </div>
+        <div id="login-error" class="hidden text-accent text-sm font-medium text-center py-1"></div>
+        <button type="submit" class="w-full px-4 py-3 bg-navy text-cream rounded-xl text-base font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-lg">Sign In</button>
+        <button type="button" onclick="navigateTo('home')" class="w-full py-2 text-sm text-navy/60 hover:text-navy transition-colors text-center">← Back to Public Site</button>
+      </form>
+      <p class="text-xs text-navy/30 text-center mt-5">Demo: PIN is 1234</p>
+    </div>
+  </div>
+
+  <!-- ====== ADMIN DASHBOARD ====== -->
+  <div id="admin-dashboard" class="hidden min-h-screen flex flex-col md:flex-row">
+    <aside class="w-full md:w-60 bg-navy text-cream flex flex-col flex-shrink-0">
+      <div class="px-5 py-5 border-b border-white/10">
+        <div class="font-display text-xl font-bold" id="admin-brand">UnityRent</div>
+        <div class="text-cream/50 text-xs mt-1">Owner Dashboard</div>
+      </div>
+      <nav class="flex md:flex-col flex-row overflow-x-auto p-2 md:p-3 gap-1">
+        <button onclick="adminNav('overview')" class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="overview"><i class="fas fa-chart-line text-xs w-4"></i> Overview</button>
+        <button onclick="adminNav('manage')"   class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="manage"><i class="fas fa-building text-xs w-4"></i> Manage</button>
+        <button onclick="adminNav('bookings')" class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="bookings"><i class="fas fa-calendar-check text-xs w-4"></i> Requests</button>
+        <button onclick="adminNav('tenants')"  class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="tenants"><i class="fas fa-users text-xs w-4"></i> Tenants</button>
+      </nav>
+      <div class="p-2 md:p-3 border-t border-white/10 mt-auto">
+        <button onclick="adminLogout()" class="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left text-cream/70">
+          <i class="fas fa-sign-out-alt text-xs"></i> Sign Out
+        </button>
+      </div>
+    </aside>
+    <main class="flex-1 overflow-auto bg-cream">
+      <div id="admin-overview" class="p-5 md:p-8 fade-in">
+        <h2 class="font-display text-2xl md:text-3xl font-bold mb-7">Dashboard Overview</h2>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-warm"><div class="text-navy/50 text-xs mb-1">Total Units</div><div class="text-3xl font-display font-bold" id="admin-total-units">0</div></div>
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-warm"><div class="text-navy/50 text-xs mb-1">Active Listings</div><div class="text-3xl font-display font-bold text-sage" id="admin-active-units">0</div></div>
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-warm"><div class="text-navy/50 text-xs mb-1">Viewing Requests</div><div class="text-3xl font-display font-bold text-accent" id="admin-booking-count">0</div></div>
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-warm"><div class="text-navy/50 text-xs mb-1">Current Tenants</div><div class="text-3xl font-display font-bold" id="admin-tenant-count">0</div></div>
+        </div>
+        <h3 class="font-display text-lg font-bold mb-3">Recent Requests</h3>
+        <div id="admin-recent-bookings" class="space-y-3"></div>
+      </div>
+      <div id="admin-manage" class="p-5 md:p-8 fade-in hidden">
+        <div class="flex items-center justify-between mb-7 flex-wrap gap-3">
+          <h2 class="font-display text-2xl md:text-3xl font-bold">Manage Units</h2>
+          <button onclick="openUnitEditor()" class="px-5 py-2.5 bg-sage text-cream rounded-xl text-sm font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-md flex items-center gap-2"><i class="fas fa-plus text-xs"></i> Add Unit</button>
+        </div>
+        <div id="admin-units-list" class="space-y-3"></div>
+      </div>
+      <div id="admin-bookings" class="p-5 md:p-8 fade-in hidden">
+        <h2 class="font-display text-2xl md:text-3xl font-bold mb-7">Viewing Requests</h2>
+        <div id="admin-bookings-list" class="space-y-3"></div>
+        <div id="no-bookings" class="hidden text-center py-16 text-lg text-navy/50">No viewing requests yet.</div>
+      </div>
+      <div id="admin-tenants" class="p-5 md:p-8 fade-in hidden">
+        <div class="flex items-center justify-between mb-7 flex-wrap gap-3">
+          <h2 class="font-display text-2xl md:text-3xl font-bold">Current Tenants</h2>
+          <button onclick="openTenantEditor()" class="px-5 py-2.5 bg-sage text-cream rounded-xl text-sm font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-md flex items-center gap-2"><i class="fas fa-plus text-xs"></i> Add Tenant</button>
+        </div>
+        <div id="admin-tenants-list" class="space-y-3"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ====== UNIT EDITOR MODAL ====== -->
+  <div id="unit-editor-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+    <div class="bg-cream rounded-3xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-auto p-7">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-display text-2xl font-bold" id="editor-title">Add New Unit</h3>
+        <button onclick="closeUnitEditor()" class="p-2 hover:bg-warm rounded-xl transition-colors"><i class="fas fa-times text-sm"></i></button>
+      </div>
+      <form onsubmit="saveUnit(event)" class="space-y-4">
+        <div><label class="block text-sm font-medium mb-1.5">Unit Name</label><input id="ed-name" type="text" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="e.g. Skyline Studio A"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium mb-1.5">Monthly Rent (₱)</label><input id="ed-price" type="number" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="25000"></div>
+          <div><label class="block text-sm font-medium mb-1.5">Size (sqm)</label><input id="ed-sqm" type="number" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="45"></div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Bedrooms</label>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" onclick="setEditorChip('beds','Studio')" class="ed-beds-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press chip-active" data-val="Studio">Studio</button>
+            <button type="button" onclick="setEditorChip('beds','1 BR')"   class="ed-beds-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="1 BR">1 BR</button>
+            <button type="button" onclick="setEditorChip('beds','2 BR')"   class="ed-beds-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="2 BR">2 BR</button>
+          </div>
+        </div>
+        <div><label class="block text-sm font-medium mb-1.5">Floor</label><input id="ed-floor" type="text" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="e.g. 15th Floor"></div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Amenities</label>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" onclick="toggleAmenity('Pool')"    class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Pool">🏊 Pool</button>
+            <button type="button" onclick="toggleAmenity('Gym')"     class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Gym">🏋️ Gym</button>
+            <button type="button" onclick="toggleAmenity('Parking')" class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Parking">🅿️ Parking</button>
+            <button type="button" onclick="toggleAmenity('Balcony')" class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Balcony">🌅 Balcony</button>
+            <button type="button" onclick="toggleAmenity('WiFi')"    class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="WiFi">📶 WiFi</button>
+          </div>
+        </div>
+        <div><label class="block text-sm font-medium mb-1.5">Description</label><textarea id="ed-desc" rows="3" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none resize-none" placeholder="Brief description…"></textarea></div>
+        <input type="hidden" id="ed-id">
+        <div class="flex gap-3 pt-1">
+          <button type="submit" class="flex-1 px-4 py-3 bg-navy text-cream rounded-xl text-base font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-lg">Save Unit</button>
+          <button type="button" onclick="closeUnitEditor()" class="px-5 py-3 bg-warm rounded-xl text-sm font-medium hover:bg-navy/10 transition-colors btn-press">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====== TENANT EDITOR MODAL ====== -->
+  <div id="tenant-editor-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+    <div class="bg-cream rounded-3xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-auto p-7">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-display text-2xl font-bold" id="tenant-editor-title">Add New Tenant</h3>
+        <button onclick="closeTenantEditor()" class="p-2 hover:bg-warm rounded-xl transition-colors"><i class="fas fa-times text-sm"></i></button>
+      </div>
+      <form onsubmit="saveTenant(event)" class="space-y-4">
+        <div><label class="block text-sm font-medium mb-1.5">Full Name</label><input id="te-name" type="text" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="Maria Santos"></div>
+        <div><label class="block text-sm font-medium mb-1.5">Email</label><input id="te-email" type="email" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="maria@email.com"></div>
+        <div><label class="block text-sm font-medium mb-1.5">Phone</label><input id="te-phone" type="tel" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="0917-555-1234"></div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Assigned Unit</label>
+          <select id="te-unit" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"><option value="">Select a unit…</option></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm font-medium mb-1.5">Lease Start</label><input id="te-lease-start" type="date" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"></div>
+          <div><label class="block text-sm font-medium mb-1.5">Lease End</label><input id="te-lease-end" type="date" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"></div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Status</label>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" onclick="setTenantStatus('Active')"   class="tenant-status-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press chip-active" data-val="Active">Active</button>
+            <button type="button" onclick="setTenantStatus('Expiring')" class="tenant-status-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Expiring">Expiring Soon</button>
+            <button type="button" onclick="setTenantStatus('Inactive')" class="tenant-status-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Inactive">Inactive</button>
+          </div>
+        </div>
+        <input type="hidden" id="te-id">
+        <input type="hidden" id="te-status" value="Active">
+        <div class="flex gap-3 pt-1">
+          <button type="submit" class="flex-1 px-4 py-3 bg-navy text-cream rounded-xl text-base font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-lg" id="te-submit-btn">Save Tenant</button>
+          <button type="button" onclick="closeTenantEditor()" class="px-5 py-3 bg-warm rounded-xl text-sm font-medium hover:bg-navy/10 transition-colors btn-press">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====== BOOKING MODAL ====== -->
+  <div id="booking-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+    <div class="bg-cream rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-auto p-6 md:p-7">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-display text-2xl font-bold">Request a Viewing</h3>
+        <button onclick="closeBookingModal()" class="p-2 hover:bg-warm rounded-xl transition-colors"><i class="fas fa-times text-sm"></i></button>
+      </div>
+      <form onsubmit="submitBooking(event)" class="space-y-4" id="booking-form">
+        <div><label class="block text-sm font-medium mb-1.5">Full Name</label><input id="bk-name" type="text" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"></div>
+        <div><label class="block text-sm font-medium mb-1.5">Email</label><input id="bk-email" type="email" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"></div>
+        <div><label class="block text-sm font-medium mb-1.5">Phone</label><input id="bk-phone" type="tel" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"></div>
+
+        <!-- DATE & TIME -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Preferred Date & Time</label>
+
+          <!-- Legend -->
+          <div class="flex items-center gap-4 mb-2.5 text-xs font-medium text-navy/70">
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-green-100 border-2 border-green-400"></span>Available</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-red-100 border-2 border-red-400"></span>Booked</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-gray-100 border border-gray-300"></span>Past</span>
+          </div>
+
+          <!-- Calendar widget -->
+          <div class="bg-white rounded-2xl border-2 border-warm p-4">
+            <div class="flex items-center justify-between mb-3">
+              <button type="button" onclick="calPrev()" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-warm transition-colors btn-press font-bold text-lg leading-none">‹</button>
+              <span class="text-sm font-semibold" id="cal-label"></span>
+              <button type="button" onclick="calNext()" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-warm transition-colors btn-press font-bold text-lg leading-none">›</button>
+            </div>
+            <div class="grid grid-cols-7 gap-1 mb-1">
+              <div class="text-center text-xs font-semibold text-navy/35 py-0.5">Su</div>
+              <div class="text-center text-xs font-semibold text-navy/35 py-0.5">Mo</div>
+              <div class="text-center text-xs font-semibold text-navy/35 py-0.5">Tu</div>
+              <div class="text-center text-xs font-semibold text-navy/35 py-0.5">We</div>
+              <div class="text-center text-xs font-semibold text-navy/35 py-0.5">Th</div>
+              <div class="text-center text-xs font-semibold text-navy/35 py-0.5">Fr</div>
+              <div class="text-center text-xs font-semibold text-navy/35 py-0.5">Sa</div>
+            </div>
+            <div class="grid grid-cols-7 gap-1" id="cal-grid"></div>
+          </div>
+
+          <!-- Selected date indicator -->
+          <div id="cal-sel-display" class="hidden mt-2.5 px-3 py-2 bg-navy/5 rounded-xl text-xs font-medium flex items-center gap-2">
+            <i class="fas fa-calendar-check text-sage text-xs"></i>
+            <span id="cal-sel-text" class="flex-1"></span>
+            <button type="button" onclick="calClearSel()" class="text-navy/40 hover:text-accent transition-colors">✕</button>
+          </div>
+
+          <!-- Time slots -->
+          <div id="cal-slots-wrap" class="hidden mt-3">
+            <p class="text-xs font-semibold text-navy/50 mb-2 uppercase tracking-wide">Select a time</p>
+            <div class="grid grid-cols-4 gap-2" id="cal-slots-grid"></div>
+          </div>
+        </div>
+
+        <!-- Hidden datetime value -->
+        <input type="hidden" id="bk-datetime">
+        <input type="hidden" id="bk-unit-id">
+
+        <div><label class="block text-sm font-medium mb-1.5">Message (optional)</label><textarea id="bk-msg" rows="2" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none resize-none" placeholder="Any questions or preferences?"></textarea></div>
+
+        <div id="booking-success" class="hidden bg-sage/10 border-2 border-sage rounded-xl p-5 text-center">
+          <div class="text-3xl mb-2">✅</div>
+          <div class="text-base font-semibold text-sage">Request Submitted!</div>
+          <div class="text-navy/60 text-sm mt-1">We'll contact you within 24 hours.</div>
+        </div>
+
+        <button type="submit" id="booking-submit-btn" class="w-full px-5 py-3.5 bg-accent text-cream rounded-xl text-base font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-lg">Submit Request</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+<!-- ====== SCRIPTS ====== -->
+<script>
+// ============ DATA ============
+const units = [
+  { id:'u1', name:'Skyline Studio A',  price:18000, sqm:28, beds:'Studio', floor:'15th Floor', amenities:['Pool','Gym','WiFi'],               description:'Bright corner studio with city views. Fully furnished with modern appliances.', status:'active', color:'#4a7c6f' },
+  { id:'u2', name:'Horizon 1-Bedroom', price:28000, sqm:45, beds:'1 BR',   floor:'22nd Floor', amenities:['Pool','Gym','Parking','Balcony'],   description:'Spacious one-bedroom with panoramic sunset views and premium finishes.',       status:'active', color:'#c8553d' },
+  { id:'u3', name:'Garden Suite 2BR',  price:42000, sqm:72, beds:'2 BR',   floor:'8th Floor',  amenities:['Pool','Parking','Balcony','WiFi'],   description:'Family-friendly two-bedroom with garden access and dedicated parking.',       status:'active', color:'#5b6abf' },
+  { id:'u4', name:'Metro Studio B',    price:15000, sqm:24, beds:'Studio', floor:'5th Floor',  amenities:['Gym','WiFi'],                        description:'Compact studio near transit. Ideal for young professionals.',                  status:'draft',  color:'#b07d4b' },
+  { id:'u5', name:'Penthouse Loft',    price:55000, sqm:95, beds:'2 BR',   floor:'30th Floor', amenities:['Pool','Gym','Parking','Balcony','WiFi'], description:'Luxury penthouse loft with rooftop access and designer interiors.',         status:'active', color:'#8b5e83' },
+];
+const bookings = [];
+const tenants  = [
+  { name:'Maria Santos', unit:'Horizon 1-Bedroom', leaseStart:'2024-06-01', leaseEnd:'2025-05-31', status:'Active',   email:'maria@email.com', phone:'0917-555-1234' },
+  { name:'James Reyes',  unit:'Garden Suite 2BR',  leaseStart:'2024-09-15', leaseEnd:'2025-09-14', status:'Active',   email:'james@email.com', phone:'0918-555-5678' },
+  { name:'Anna Cruz',    unit:'Skyline Studio A',  leaseStart:'2024-01-01', leaseEnd:'2024-12-31', status:'Expiring', email:'anna@email.com',  phone:'0919-555-9012' },
+];
+
+// ============ STATE ============
+let currentView   = 'home';
+let chatOpen      = false;
+let filters       = { price:'all', beds:'all', amenity:'all' };
+let editorBeds    = 'Studio';
+let editorAmenities = [];
+let editingUnitId = null;
+let nextUnitId    = 6;
+
+// Calendar state
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MON_SHORT   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TIME_SLOTS  = [
+  { val:'09:00', label:'9:00 AM'  },
+  { val:'11:00', label:'11:00 AM' },
+  { val:'14:00', label:'2:00 PM'  },
+  { val:'16:00', label:'4:00 PM'  },
+];
+let calYear, calMonth;
+let calSelDate = null;   // Date object (midnight local)
+let calSelTime = null;   // "HH:MM"
+
+// ============ NAV ============
+function navigateTo(view) {
+  if (view === 'admin-login') {
+    document.getElementById('public-portal').classList.add('hidden');
+    document.getElementById('admin-login-view').classList.remove('hidden');
+    document.getElementById('admin-dashboard').classList.add('hidden');
+    return;
+  }
+  document.getElementById('public-portal').classList.remove('hidden');
+  document.getElementById('admin-login-view').classList.add('hidden');
+  document.getElementById('admin-dashboard').classList.add('hidden');
+  ['home','units','detail','bookings'].forEach(v =>
+    document.getElementById('view-'+v).classList.toggle('hidden', v !== view));
+  currentView = view;
+  if (view==='units')    renderUnits();
+  if (view==='bookings') renderGuestBookings();
+  updateNavHL();
+  window.scrollTo(0,0);
+}
+function updateNavHL() {
+  document.querySelectorAll('.nav-link').forEach(b => {
+    b.classList.toggle('bg-warm',     b.dataset.nav === currentView);
+    b.classList.toggle('font-semibold', b.dataset.nav === currentView);
+  });
+}
+
+// ============ FILTER — amenity data-val now matches Title Case exactly ============
+function setFilter(type, val) {
+  if (type === 'amenity') {
+    if (val === 'all') {
+      filters.amenity = 'all';
+    } else {
+      if (filters.amenity === 'all') {
+        filters.amenity = [val];
+      } else {
+        const idx = filters.amenity.indexOf(val);
+        if (idx >= 0) {
+          filters.amenity.splice(idx, 1);
+          if (!filters.amenity.length) filters.amenity = 'all';
+        } else {
+          filters.amenity.push(val);
+        }
+      }
+    }
+    document.querySelectorAll('.filter-chip-amenity').forEach(c => {
+      if (c.dataset.val === 'all') c.classList.toggle('chip-active', filters.amenity === 'all');
+      else c.classList.toggle('chip-active', Array.isArray(filters.amenity) && filters.amenity.includes(c.dataset.val));
+    });
+  } else {
+    filters[type] = val;
+    document.querySelectorAll('.filter-chip-'+type).forEach(c =>
+      c.classList.toggle('chip-active', c.dataset.val === val));
+  }
+  renderUnits();
+}
+
+function getFiltered() {
+  return units.filter(u => {
+    if (u.status !== 'active') return false;
+    if (filters.price === 'low'  && u.price >= 25000) return false;
+    if (filters.price === 'mid'  && (u.price < 25000 || u.price > 40000)) return false;
+    if (filters.price === 'high' && u.price <= 40000) return false;
+    if (filters.beds === 'studio' && u.beds !== 'Studio') return false;
+    if (filters.beds === '1'     && u.beds !== '1 BR')   return false;
+    if (filters.beds === '2'     && u.beds !== '2 BR')   return false;
+    // AND logic: unit must have ALL selected amenities
+    if (filters.amenity !== 'all' && Array.isArray(filters.amenity) && filters.amenity.length)
+      if (!filters.amenity.every(a => u.amenities.includes(a))) return false;
+    return true;
+  });
+}
+
+// ============ UNITS ============
+function aEmoji(a) { return {Pool:'🏊',Gym:'🏋️',Parking:'🅿️',Balcony:'🌅',WiFi:'📶'}[a]||'✨'; }
+
+function renderUnits() {
+  const grid     = document.getElementById('units-grid');
+  const filtered = getFiltered();
+  grid.innerHTML = '';
+  document.getElementById('no-units').classList.toggle('hidden', filtered.length > 0);
+  filtered.forEach(u => {
+    const c = document.createElement('div');
+    c.className = 'unit-card bg-white rounded-2xl overflow-hidden shadow-sm border border-warm cursor-pointer';
+    c.onclick = () => showDetail(u.id);
+    c.innerHTML = `
+      <div class="h-36 flex items-center justify-center" style="background:${u.color}20">
+        <div class="text-5xl">${u.beds==='Studio'?'🏙️':u.beds==='1 BR'?'🏠':'🏡'}</div>
+      </div>
+      <div class="p-4">
+        <div class="flex items-start justify-between gap-2 mb-1.5">
+          <h3 class="font-display text-lg font-bold leading-tight">${u.name}</h3>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-sage/10 text-sage whitespace-nowrap">${u.beds}</span>
+        </div>
+        <p class="text-navy/50 text-xs mb-2.5 line-clamp-2">${u.description}</p>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xl font-display font-bold" style="color:${u.color}">₱${u.price.toLocaleString()}</span>
+          <span class="text-navy/40 text-xs">/month</span>
+        </div>
+        <div class="flex gap-1 flex-wrap">
+          ${u.amenities.map(a=>`<span class="text-xs px-2 py-0.5 bg-warm rounded-md">${aEmoji(a)} ${a}</span>`).join('')}
+        </div>
+      </div>`;
+    grid.appendChild(c);
+  });
+}
+
+function showDetail(id) {
+  const u = units.find(x => x.id === id); if (!u) return;
+  document.getElementById('detail-content').innerHTML = `
+    <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-warm">
+      <div class="h-48 flex items-center justify-center" style="background:${u.color}15">
+        <div class="text-7xl">${u.beds==='Studio'?'🏙️':u.beds==='1 BR'?'🏠':'🏡'}</div>
+      </div>
+      <div class="p-7">
+        <div class="flex items-start justify-between flex-wrap gap-4 mb-4">
+          <h2 class="font-display text-3xl font-bold">${u.name}</h2>
+          <div class="text-2xl font-display font-bold" style="color:${u.color}">₱${u.price.toLocaleString()}<span class="text-sm text-navy/40 font-normal">/mo</span></div>
+        </div>
+        <p class="text-base text-navy/60 mb-6">${u.description}</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1">🛏️</div><div class="text-sm font-medium">${u.beds}</div></div>
+          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1">📐</div><div class="text-sm font-medium">${u.sqm} sqm</div></div>
+          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1">🏢</div><div class="text-sm font-medium">${u.floor}</div></div>
+          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1">✅</div><div class="text-sm font-medium">Available</div></div>
+        </div>
+        <div class="mb-5">
+          <h3 class="text-base font-semibold mb-2">Amenities</h3>
+          <div class="flex gap-2 flex-wrap">${u.amenities.map(a=>`<span class="px-3 py-1.5 bg-cream rounded-lg text-sm font-medium">${aEmoji(a)} ${a}</span>`).join('')}</div>
+        </div>
+        <button onclick="openBooking('${u.id}')" class="w-full px-5 py-3.5 bg-accent text-cream rounded-xl text-base font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-lg">Request a Viewing →</button>
+      </div>
+    </div>`;
+  navigateTo('detail');
+}
+
+// ============ CALENDAR HELPERS ============
+function calDateStr(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function calBookedDates(unitId) {
+  const unit = units.find(u => u.id === unitId);
+  const set  = new Set();
+  if (!unit) return set;
+  bookings.forEach(b => {
+    if (b.unitName === unit.name) {
+      const dt = new Date(b.datetime);
+      set.add(calDateStr(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+    }
+  });
+  return set;
+}
+function calBookedSlots(unitId, dateStr) {
+  const unit = units.find(u => u.id === unitId);
+  const set  = new Set();
+  if (!unit) return set;
+  bookings.forEach(b => {
+    if (b.unitName === unit.name) {
+      const dt = new Date(b.datetime);
+      const ds = calDateStr(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      if (ds === dateStr) set.add(`${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`);
+    }
+  });
+  return set;
+}
+
+// ============ CALENDAR RENDER ============
+function calRender() {
+  const unitId = document.getElementById('bk-unit-id').value;
+  const booked = calBookedDates(unitId);
+  const today  = new Date(); today.setHours(0,0,0,0);
+
+  document.getElementById('cal-label').textContent = `${MONTH_NAMES[calMonth]} ${calYear}`;
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const firstDay    = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+
+  // Empty padding
+  for (let i = 0; i < firstDay; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const btn      = document.createElement('button');
+    btn.type       = 'button';
+    btn.textContent = d;
+
+    const cellDate = new Date(calYear, calMonth, d);
+    cellDate.setHours(0,0,0,0);
+    const ds       = calDateStr(calYear, calMonth, d);
+    const isPast   = cellDate < today;
+    const isBooked = booked.has(ds);
+    const isSel    = calSelDate && calSelDate.getTime() === cellDate.getTime();
+    const isToday  = cellDate.getTime() === today.getTime();
+
+    btn.className = 'cal-day';
+    if (isSel)        { btn.classList.add('selday'); }
+    else if (isPast)  { btn.classList.add('past');   btn.disabled = true; btn.title = 'Past date'; }
+    else if (isBooked){ btn.classList.add('taken');  btn.disabled = true; btn.title = 'Already booked — choose another day'; }
+    else              { btn.classList.add('avail');  btn.onclick  = () => calPickDay(d, ds); }
+    if (isToday)      { btn.classList.add('today-ring'); }
+
+    grid.appendChild(btn);
+  }
+}
+
+function calPickDay(d, ds) {
+  calSelDate = new Date(calYear, calMonth, d);
+  calSelTime = null;
+  document.getElementById('bk-datetime').value = '';
+
+  const txt = `${MON_SHORT[calMonth]} ${d}, ${calYear} — pick a time below`;
+  document.getElementById('cal-sel-text').textContent   = txt;
+  document.getElementById('cal-sel-display').classList.remove('hidden');
+
+  calRenderSlots(ds);
+  calRender();
+}
+
+function calRenderSlots(ds) {
+  const unitId     = document.getElementById('bk-unit-id').value;
+  const takenSlots = calBookedSlots(unitId, ds);
+  const now        = new Date();
+  const grid       = document.getElementById('cal-slots-grid');
+  grid.innerHTML   = '';
+
+  TIME_SLOTS.forEach(({ val, label }) => {
+    const btn  = document.createElement('button');
+    btn.type   = 'button';
+    btn.className = 'tslot';
+    btn.textContent = label;
+
+    const [h, m]  = val.split(':').map(Number);
+    const slotDt  = new Date(calSelDate); slotDt.setHours(h, m, 0, 0);
+    const isPast  = slotDt <= now;
+    const isTaken = takenSlots.has(val);
+    const isSel   = calSelTime === val;
+
+    if (isSel)       btn.classList.add('tsel');
+    if (isPast)      { btn.classList.add('tpast');  btn.disabled = true; }
+    else if (isTaken){ btn.classList.add('ttaken'); btn.disabled = true; btn.textContent = label + ' ✕'; }
+    else             btn.onclick = () => calPickTime(val, label);
+
+    grid.appendChild(btn);
+  });
+
+  document.getElementById('cal-slots-wrap').classList.remove('hidden');
+}
+
+function calPickTime(val, label) {
+  calSelTime = val;
+  const [h, m] = val.split(':').map(Number);
+  const dt     = new Date(calSelDate); dt.setHours(h, m, 0, 0);
+
+  const pad  = n => String(n).padStart(2,'0');
+  document.getElementById('bk-datetime').value = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(h)}:${pad(m)}`;
+
+  document.getElementById('cal-sel-text').textContent = `${MON_SHORT[calSelDate.getMonth()]} ${calSelDate.getDate()}, ${calSelDate.getFullYear()} at ${label}`;
+
+  // Re-render slots to show selected highlight
+  const ds = calDateStr(calSelDate.getFullYear(), calSelDate.getMonth(), calSelDate.getDate());
+  calRenderSlots(ds);
+}
+
+function calClearSel() {
+  calSelDate = null; calSelTime = null;
+  document.getElementById('bk-datetime').value = '';
+  document.getElementById('cal-sel-display').classList.add('hidden');
+  document.getElementById('cal-slots-wrap').classList.add('hidden');
+  calRender();
+}
+function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } calRender(); }
+function calNext() { calMonth++; if (calMonth > 11){ calMonth = 0;  calYear++; } calRender(); }
+
+// ============ BOOKING MODAL ============
+function openBooking(unitId) {
+  ['bk-name','bk-email','bk-phone','bk-msg','bk-datetime'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('bk-unit-id').value = unitId;
+  document.getElementById('booking-success').classList.add('hidden');
+  document.getElementById('booking-submit-btn').classList.remove('hidden');
+  document.getElementById('booking-submit-btn').textContent = 'Submit Request';
+  document.getElementById('booking-modal').classList.remove('hidden');
+  window.editingBookingId = null;
+
+  // Reset & init calendar
+  const now = new Date();
+  calYear = now.getFullYear(); calMonth = now.getMonth();
+  calSelDate = null; calSelTime = null;
+  document.getElementById('cal-sel-display').classList.add('hidden');
+  document.getElementById('cal-slots-wrap').classList.add('hidden');
+  calRender();
+}
+function closeBookingModal() { document.getElementById('booking-modal').classList.add('hidden'); }
+
+function submitBooking(e) {
+  e.preventDefault();
+  const dtVal = document.getElementById('bk-datetime').value;
+  if (!dtVal) { alert('Please select a date and time from the calendar.'); return; }
+
+  if (window.editingBookingId) {
+    const b = bookings.find(x => x.id === window.editingBookingId);
+    if (b) {
+      const dt = new Date(dtVal);
+      Object.assign(b, {
+        name:    document.getElementById('bk-name').value,
+        email:   document.getElementById('bk-email').value,
+        phone:   document.getElementById('bk-phone').value,
+        datetime: dtVal,
+        dateStr: dt.toLocaleDateString(),
+        timeStr: dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+        message: document.getElementById('bk-msg').value,
+      });
+    }
+    closeBookingModal(); renderGuestBookings(); navigateTo('bookings');
+    window.editingBookingId = null;
+    return;
+  }
+
+  const unitId = document.getElementById('bk-unit-id').value;
+  const unit   = units.find(u => u.id === unitId);
+  const dt     = new Date(dtVal);
+  bookings.push({
+    id:       'b'+Date.now(),
+    unitName: unit ? unit.name : 'Unknown',
+    name:     document.getElementById('bk-name').value,
+    email:    document.getElementById('bk-email').value,
+    phone:    document.getElementById('bk-phone').value,
+    datetime: dtVal,
+    dateStr:  dt.toLocaleDateString(),
+    timeStr:  dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+    message:  document.getElementById('bk-msg').value,
+    status:   'Pending',
+  });
+  document.getElementById('booking-success').classList.remove('hidden');
+  document.getElementById('booking-submit-btn').classList.add('hidden');
+  renderGuestBookings();
+  calRender(); // refresh so newly booked day turns red immediately
+}
+
+// ============ GUEST BOOKINGS ============
+function renderGuestBookings() {
+  const cont = document.getElementById('guest-bookings-container');
+  if (!bookings.length) {
+    cont.innerHTML = '<div class="text-center py-16 text-lg text-navy/40"><p>No bookings yet. <button onclick="navigateTo(\'units\')" class="underline hover:text-navy transition-colors font-medium">Browse units</button> to request a viewing!</p></div>';
+    return;
+  }
+  cont.innerHTML = '';
+  bookings.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'bg-white rounded-2xl p-5 shadow-sm border border-warm';
+    const sc = b.status==='Pending'?'bg-yellow-100 text-yellow-800':b.status==='Confirmed'?'bg-sage/10 text-sage':'bg-red-100 text-red-800';
+    div.innerHTML = `
+      <div class="flex items-start justify-between gap-4 mb-3 flex-wrap">
+        <div>
+          <div class="font-display text-lg font-bold">${b.unitName}</div>
+          <div class="text-sm text-navy/60">${b.name}</div>
+        </div>
+        <span class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${sc}">${b.status}</span>
+      </div>
+      <div class="space-y-1 mb-3 text-sm text-navy/70">
+        <div>📧 ${b.email}</div>
+        <div>📞 ${b.phone}</div>
+        <div>📅 ${b.dateStr} at ${b.timeStr}</div>
+        ${b.message?`<div>💬 ${b.message}</div>`:''}
+      </div>
+      <div class="flex gap-2">
+        <button onclick="editBooking('${b.id}')" class="px-4 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors text-sm font-medium btn-press">Edit</button>
+        <button onclick="deleteBooking('${b.id}')" class="px-4 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors text-sm font-medium btn-press">Cancel</button>
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+
+function editBooking(id) {
+  const b = bookings.find(x => x.id === id); if (!b) return;
+  const unitId = (units.find(u => u.name === b.unitName)||{}).id || '';
+  openBooking(unitId);
+  document.getElementById('bk-name').value  = b.name;
+  document.getElementById('bk-email').value = b.email;
+  document.getElementById('bk-phone').value = b.phone;
+  document.getElementById('bk-msg').value   = b.message || '';
+  if (b.datetime) {
+    const dt   = new Date(b.datetime);
+    calYear    = dt.getFullYear();
+    calMonth   = dt.getMonth();
+    calSelDate = new Date(calYear, calMonth, dt.getDate());
+    calSelTime = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    document.getElementById('bk-datetime').value = b.datetime;
+    const ds  = calDateStr(calYear, calMonth, dt.getDate());
+    const lbl = (TIME_SLOTS.find(s => s.val === calSelTime)||{}).label || calSelTime;
+    document.getElementById('cal-sel-text').textContent = `${MON_SHORT[calMonth]} ${dt.getDate()}, ${calYear} at ${lbl}`;
+    document.getElementById('cal-sel-display').classList.remove('hidden');
+    calRenderSlots(ds);
+    calRender();
+  }
+  window.editingBookingId = id;
+  document.getElementById('booking-submit-btn').textContent = 'Update Booking';
+  document.getElementById('booking-submit-btn').classList.remove('hidden');
+}
+
+function deleteBooking(id) {
+  const idx = bookings.findIndex(x => x.id === id);
+  if (idx >= 0) { bookings.splice(idx,1); renderGuestBookings(); }
+}
+
+// ============ CHATBOT ============
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chat-panel').classList.toggle('hidden', !chatOpen);
+  if (chatOpen && !document.getElementById('chat-messages').children.length) {
+    addBot("Hi! 👋 I'm your UnityRent assistant. How can I help you find a condo?");
+    addBot("Try:\n• \"Studios under ₱20k\"\n• \"Units with a pool\"\n• \"2 bedroom condos\"");
+  }
+}
+function addBot(text, cards) {
+  const c = document.getElementById('chat-messages');
+  const d = document.createElement('div');
+  d.className = 'chat-bubble flex gap-2';
+  let ch = '';
+  if (cards && cards.length) ch = cards.map(u=>`
+    <div class="mt-2 bg-cream rounded-xl p-3 border border-warm cursor-pointer hover:shadow-md transition-shadow" onclick="showDetail('${u.id}');toggleChat();">
+      <div class="flex justify-between items-start mb-1">
+        <span class="font-semibold text-xs">${u.name}</span>
+        <span class="text-xs font-semibold" style="color:${u.color}">₱${u.price.toLocaleString()}</span>
+      </div>
+      <div class="text-xs text-navy/50">${u.beds} · ${u.sqm}sqm · ${u.floor}</div>
+    </div>`).join('');
+  d.innerHTML = `
+    <div class="w-7 h-7 rounded-full bg-navy flex items-center justify-center flex-shrink-0 mt-1">
+      <i class="fas fa-robot" style="color:#faf8f4;font-size:10px"></i>
+    </div>
+    <div class="bg-white rounded-2xl rounded-tl-md px-3 py-2.5 max-w-xs shadow-sm border border-warm">
+      <div class="text-xs whitespace-pre-wrap">${text}</div>${ch}
+    </div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function addUser(text) {
+  const c = document.getElementById('chat-messages');
+  const d = document.createElement('div');
+  d.className = 'chat-bubble flex justify-end';
+  d.innerHTML = `<div class="bg-navy text-cream rounded-2xl rounded-tr-md px-3 py-2.5 max-w-xs shadow-sm"><div class="text-xs">${text}</div></div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function handleChatSend(e) {
+  e.preventDefault();
+  const inp = document.getElementById('chat-input');
+  const msg = inp.value.trim(); if (!msg) return;
+  inp.value = ''; addUser(msg);
+  setTimeout(() => processChat(msg), 350);
+}
+function processChat(msg) {
+  const l  = msg.toLowerCase();
+  let mu   = units.filter(u => u.status==='active');
+  let resp = '';
+  if (l.includes('under')||l.includes('below')||l.includes('cheap')||l.includes('budget')) {
+    const nm  = l.match(/(\d+)/);
+    const lim = nm ? (parseInt(nm[1])<1000?parseInt(nm[1])*1000:parseInt(nm[1])) : 25000;
+    mu = mu.filter(u=>u.price<=lim); resp=`Units under ₱${lim.toLocaleString()}/mo:`;
+  } else if (l.includes('above')||l.includes('over')||l.includes('premium')||l.includes('luxury')) {
+    mu = mu.filter(u=>u.price>=40000); resp='Our premium units:';
+  }
+  if (l.includes('studio')) { mu=mu.filter(u=>u.beds==='Studio'); resp=resp||'Studio units:'; }
+  else if (l.match(/2\s?b(ed|r)/)||l.includes('two bed')) { mu=mu.filter(u=>u.beds==='2 BR'); resp=resp||'2-bedroom units:'; }
+  else if (l.match(/1\s?b(ed|r)/)||l.includes('one bed')) { mu=mu.filter(u=>u.beds==='1 BR'); resp=resp||'1-bedroom units:'; }
+  ['pool','gym','parking','balcony','wifi'].forEach(a => {
+    if (l.includes(a)) {
+      const cap = a==='wifi'?'WiFi':a[0].toUpperCase()+a.slice(1);
+      mu=mu.filter(u=>u.amenities.includes(cap)); resp=resp||`Units with ${cap}:`;
+    }
+  });
+  if (!resp) { addBot("I can help! Try:\n\n🏷️ \"Studios under 20k\"\n🏊 \"Units with a pool\"\n🛏️ \"2 bedroom condos\"\n💰 \"Premium units\""); return; }
+  mu.length ? addBot(resp, mu) : addBot("No units match that. Try broadening your search 🔍");
+}
+
+// ============ ADMIN ============
+function handleAdminLogin(e) {
+  e.preventDefault();
+  if (document.getElementById('admin-pin').value === '1234') {
+    document.getElementById('login-error').classList.add('hidden');
+    document.getElementById('admin-login-view').classList.add('hidden');
+    document.getElementById('admin-dashboard').classList.remove('hidden');
+    adminNav('overview');
+  } else {
+    document.getElementById('login-error').textContent = 'Incorrect PIN. Try 1234 for demo.';
+    document.getElementById('login-error').classList.remove('hidden');
+  }
+}
+function adminLogout() { navigateTo('home'); }
+function adminNav(view) {
+  ['overview','manage','bookings','tenants'].forEach(v =>
+    document.getElementById('admin-'+v).classList.toggle('hidden', v!==view));
+  document.querySelectorAll('.admin-nav-btn').forEach(b =>
+    b.classList.toggle('bg-white/15', b.dataset.adminNav===view));
+  if (view==='overview') renderAO();
+  if (view==='manage')   renderAUnits();
+  if (view==='bookings') renderABookings();
+  if (view==='tenants')  renderATenants();
+}
+
+function renderAO() {
+  document.getElementById('admin-total-units').textContent   = units.length;
+  document.getElementById('admin-active-units').textContent  = units.filter(u=>u.status==='active').length;
+  document.getElementById('admin-booking-count').textContent = bookings.length;
+  document.getElementById('admin-tenant-count').textContent  = tenants.length;
+  const cont = document.getElementById('admin-recent-bookings');
+  cont.innerHTML = '';
+  if (!bookings.length) { cont.innerHTML='<div class="text-navy/40 text-sm py-6 text-center">No viewing requests yet.</div>'; return; }
+  bookings.slice(-3).reverse().forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'bg-white rounded-xl p-4 border border-warm flex items-center justify-between flex-wrap gap-3';
+    const sc = b.status==='Pending'?'bg-yellow-100 text-yellow-800':b.status==='Confirmed'?'bg-sage/10 text-sage':'bg-red-100 text-red-800';
+    div.innerHTML = `<div><div class="text-sm font-semibold">${b.name}</div><div class="text-xs text-navy/50">${b.unitName} · ${b.dateStr} ${b.timeStr}</div></div><span class="px-3 py-1 rounded-full text-xs font-medium ${sc}">${b.status}</span>`;
+    cont.appendChild(div);
+  });
+}
+
+function renderAUnits() {
+  const cont = document.getElementById('admin-units-list'); cont.innerHTML = '';
+  units.forEach(u => {
+    const div = document.createElement('div');
+    div.className = 'bg-white rounded-xl p-4 border border-warm flex items-center justify-between flex-wrap gap-3';
+    div.innerHTML = `
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:${u.color}20">${u.beds==='Studio'?'🏙️':u.beds==='1 BR'?'🏠':'🏡'}</div>
+        <div>
+          <div class="text-sm font-semibold">${u.name}</div>
+          <div class="text-xs text-navy/50">${u.beds} · ${u.sqm}sqm · ₱${u.price.toLocaleString()}/mo</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleUS('${u.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold btn-press transition-colors ${u.status==='active'?'bg-sage/10 text-sage hover:bg-sage/20':'bg-navy/5 text-navy/40 hover:bg-navy/10'}">${u.status==='active'?'● Active':'○ Draft'}</button>
+        <button onclick="openUnitEditor('${u.id}')" class="px-2.5 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press"><i class="fas fa-edit text-xs"></i></button>
+        <button onclick="deleteUnit('${u.id}')" class="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors btn-press"><i class="fas fa-trash-alt text-xs"></i></button>
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+function toggleUS(id) {
+  const u=units.find(x=>x.id===id);
+  if(u){u.status=u.status==='active'?'draft':'active';renderAUnits();}
+}
+function deleteUnit(id) {
+  const u=units.find(x=>x.id===id); if(!u) return;
+  const cont=document.getElementById('admin-units-list');
+  for(let c of cont.children) {
+    if(c.querySelector(`[onclick="deleteUnit('${id}')"]`)){
+      c.innerHTML=`<div class="w-full flex items-center justify-between flex-wrap gap-3">
+        <span class="text-sm font-semibold text-red-600">Delete "${u.name}"?</span>
+        <div class="flex gap-2">
+          <button onclick="confirmDelete('${id}')" class="px-3 py-1.5 rounded-xl bg-red-600 text-cream text-xs font-semibold btn-press">Yes, Delete</button>
+          <button onclick="renderAUnits()" class="px-3 py-1.5 rounded-xl bg-warm text-xs font-medium btn-press">Cancel</button>
+        </div></div>`; break;
+    }
+  }
+}
+function confirmDelete(id) {
+  const idx=units.findIndex(x=>x.id===id);
+  if(idx!==-1) units.splice(idx,1); renderAUnits();
+}
+function openUnitEditor(id) {
+  editingUnitId=id||null;
+  document.getElementById('unit-editor-modal').classList.remove('hidden');
+  if(id){
+    const u=units.find(x=>x.id===id);
+    document.getElementById('editor-title').textContent='Edit Unit';
+    document.getElementById('ed-name').value=u.name;
+    document.getElementById('ed-price').value=u.price;
+    document.getElementById('ed-sqm').value=u.sqm;
+    document.getElementById('ed-floor').value=u.floor;
+    document.getElementById('ed-desc').value=u.description;
+    document.getElementById('ed-id').value=u.id;
+    editorBeds=u.beds; editorAmenities=[...u.amenities];
+  } else {
+    document.getElementById('editor-title').textContent='Add New Unit';
+    ['ed-name','ed-price','ed-sqm','ed-floor','ed-desc','ed-id'].forEach(i=>document.getElementById(i).value='');
+    editorBeds='Studio'; editorAmenities=[];
+  }
+  updateEChips();
+}
+function closeUnitEditor(){ document.getElementById('unit-editor-modal').classList.add('hidden'); }
+function setEditorChip(t,v){ if(t==='beds') editorBeds=v; updateEChips(); }
+function toggleAmenity(a){
+  const i=editorAmenities.indexOf(a);
+  if(i>=0) editorAmenities.splice(i,1); else editorAmenities.push(a);
+  updateEChips();
+}
+function updateEChips(){
+  document.querySelectorAll('.ed-beds-chip').forEach(c=>c.classList.toggle('chip-active',c.dataset.val===editorBeds));
+  document.querySelectorAll('.amenity-chip').forEach(c=>c.classList.toggle('chip-active',editorAmenities.includes(c.dataset.val)));
+}
+function saveUnit(e){
+  e.preventDefault();
+  const colors=['#4a7c6f','#c8553d','#5b6abf','#b07d4b','#8b5e83','#d4764e','#6b8e5a'];
+  const data={
+    name:document.getElementById('ed-name').value,
+    price:parseInt(document.getElementById('ed-price').value),
+    sqm:parseInt(document.getElementById('ed-sqm').value),
+    beds:editorBeds,
+    floor:document.getElementById('ed-floor').value||'TBD',
+    amenities:[...editorAmenities],
+    description:document.getElementById('ed-desc').value||'Beautiful condo unit available for rent.',
+  };
+  if(editingUnitId) Object.assign(units.find(x=>x.id===editingUnitId),data);
+  else units.push({id:'u'+(nextUnitId++), ...data, status:'active', color:colors[Math.floor(Math.random()*colors.length)]});
+  closeUnitEditor(); renderAUnits();
+}
+
+function renderABookings(){
+  const cont=document.getElementById('admin-bookings-list');
+  cont.innerHTML='';
+  document.getElementById('no-bookings').classList.toggle('hidden',bookings.length>0);
+  bookings.slice().reverse().forEach(b=>{
+    const div=document.createElement('div');
+    div.className='bg-white rounded-xl p-4 border border-warm';
+    const sc=b.status==='Pending'?'bg-yellow-100 text-yellow-800':b.status==='Confirmed'?'bg-sage/10 text-sage':'bg-red-100 text-red-800';
+    div.innerHTML=`
+      <div class="flex items-start justify-between flex-wrap gap-3 mb-2">
+        <div><div class="text-sm font-semibold">${b.name}</div><div class="text-xs text-navy/50">${b.email} · ${b.phone}</div></div>
+        <span class="px-2.5 py-1 rounded-full text-xs font-medium ${sc}">${b.status}</span>
+      </div>
+      <div class="text-xs text-navy/60 mb-2"><strong>Unit:</strong> ${b.unitName} · <strong>Date:</strong> ${b.dateStr} at ${b.timeStr}${b.message?`<br><strong>Note:</strong> ${b.message}`:''}</div>
+      ${b.status==='Pending'?`<div class="flex gap-2">
+        <button onclick="updBS('${b.id}','Confirmed')" class="px-3 py-1.5 bg-sage text-cream rounded-lg text-xs font-semibold btn-press hover:bg-opacity-90">✓ Confirm</button>
+        <button onclick="updBS('${b.id}','Declined')"  class="px-3 py-1.5 bg-warm rounded-lg text-xs font-medium btn-press hover:bg-navy/10">✕ Decline</button>
+      </div>`:''}`;
+    cont.appendChild(div);
+  });
+}
+function updBS(id,status){ const b=bookings.find(x=>x.id===id); if(b){b.status=status;renderABookings();} }
+
+function renderATenants(){
+  const cont=document.getElementById('admin-tenants-list'); cont.innerHTML='';
+  if(!tenants.length){cont.innerHTML='<div class="text-center py-16 text-lg text-navy/50">No tenants yet.</div>';return;}
+  tenants.forEach((t,idx)=>{
+    const div=document.createElement('div');
+    div.className='bg-white rounded-xl p-4 border border-warm flex items-center justify-between flex-wrap gap-3';
+    const sc=t.status==='Active'?'bg-sage/10 text-sage':t.status==='Expiring'?'bg-yellow-100 text-yellow-800':'bg-navy/5 text-navy/40';
+    div.innerHTML=`
+      <div>
+        <div class="text-sm font-semibold">${t.name}</div>
+        <div class="text-xs text-navy/50">${t.unit} · ${t.email}</div>
+        <div class="text-xs text-navy/40">${t.leaseStart} → ${t.leaseEnd}</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${sc}">${t.status}</span>
+        <button onclick="openTenantEditor(${idx})" class="px-2.5 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press"><i class="fas fa-edit text-xs"></i></button>
+        <button onclick="deleteTenant(${idx})" class="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors btn-press"><i class="fas fa-trash-alt text-xs"></i></button>
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+function openTenantEditor(id){
+  document.getElementById('tenant-editor-modal').classList.remove('hidden');
+  const sel=document.getElementById('te-unit');
+  sel.innerHTML='<option value="">Select a unit…</option>';
+  units.filter(u=>u.status==='active').forEach(u=>{
+    const o=document.createElement('option'); o.value=u.name; o.textContent=u.name; sel.appendChild(o);
+  });
+  if(typeof id==='number'){
+    const t=tenants[id]; if(!t) return;
+    document.getElementById('tenant-editor-title').textContent='✏️ Edit Tenant';
+    document.getElementById('te-name').value=t.name;
+    document.getElementById('te-email').value=t.email;
+    document.getElementById('te-phone').value=t.phone;
+    document.getElementById('te-unit').value=t.unit;
+    document.getElementById('te-lease-start').value=t.leaseStart;
+    document.getElementById('te-lease-end').value=t.leaseEnd;
+    document.getElementById('te-id').value=id;
+    document.getElementById('te-status').value=t.status;
+    document.getElementById('te-submit-btn').textContent='Update Tenant';
+  } else {
+    document.getElementById('tenant-editor-title').textContent='Add New Tenant';
+    ['te-name','te-email','te-phone','te-lease-start','te-lease-end'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('te-unit').value='';
+    document.getElementById('te-id').value='';
+    document.getElementById('te-status').value='Active';
+    document.getElementById('te-submit-btn').textContent='Save Tenant';
+  }
+  updateTSChips();
+}
+function closeTenantEditor(){ document.getElementById('tenant-editor-modal').classList.add('hidden'); }
+function setTenantStatus(s){ document.getElementById('te-status').value=s; updateTSChips(); }
+function updateTSChips(){
+  const s=document.getElementById('te-status').value;
+  document.querySelectorAll('.tenant-status-chip').forEach(c=>c.classList.toggle('chip-active',c.dataset.val===s));
+}
+function saveTenant(e){
+  e.preventDefault();
+  const id=document.getElementById('te-id').value;
+  const data={
+    name:document.getElementById('te-name').value,
+    email:document.getElementById('te-email').value,
+    phone:document.getElementById('te-phone').value,
+    unit:document.getElementById('te-unit').value,
+    leaseStart:document.getElementById('te-lease-start').value,
+    leaseEnd:document.getElementById('te-lease-end').value,
+    status:document.getElementById('te-status').value,
+  };
+  if(id!==''){const idx=parseInt(id);if(tenants[idx])Object.assign(tenants[idx],data);}
+  else tenants.push({...data});
+  closeTenantEditor(); renderATenants();
+}
+function deleteTenant(id){
+  const cont=document.getElementById('admin-tenants-list');
+  for(let c of cont.children){
+    if(c.querySelector(`[onclick="deleteTenant(${id})"]`)){
+      const t=tenants[id];
+      c.innerHTML=`<div class="w-full flex items-center justify-between flex-wrap gap-3">
+        <span class="text-sm font-semibold text-red-600">Delete "${t.name}"?</span>
+        <div class="flex gap-2">
+          <button onclick="confirmDeleteTenant(${id})" class="px-3 py-1.5 rounded-xl bg-red-600 text-cream text-xs font-semibold btn-press">Yes, Delete</button>
+          <button onclick="renderATenants()" class="px-3 py-1.5 rounded-xl bg-warm text-xs font-medium btn-press">Cancel</button>
+        </div></div>`; break;
+    }
+  }
+}
+function confirmDeleteTenant(id){ if(tenants[id]) tenants.splice(id,1); renderATenants(); }
+
+// ============ INIT ============
+updateNavHL();
+lucide.createIcons();
+</script>
+</body>
+</html>
