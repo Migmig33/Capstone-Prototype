@@ -68,6 +68,15 @@
     .tslot.tsel   { background:#0f1b2d; border-color:#0f1b2d; color:#faf8f4; }
     .tslot.ttaken { background:#fee2e2; border-color:#f87171; color:#991b1b; cursor:not-allowed; text-decoration:line-through; opacity:.75; }
     .tslot.tpast  { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; opacity:.6; }
+    /* ---- Admin unit tenants slide-down panel ---- */
+    .tenant-panel { max-height: 0; overflow: hidden; transition: max-height 320ms cubic-bezier(.2,.9,.2,1), opacity 220ms ease; }
+    .tenant-entry { background: #fff7f0; border-radius: 12px; padding: 12px; border: 1px solid rgba(15,27,45,0.04); }
+    .tenant-entry + .tenant-entry { margin-top: 8px; }
+    @media (max-width: 640px) {
+      .tenant-entry { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+      .tenant-entry .px-3 { align-self: stretch; }
+      .tenant-panel { padding-left: 6px; padding-right: 6px; }
+    }
   </style>
 </head>
 <body class="h-full bg-cream font-body text-navy">
@@ -212,7 +221,7 @@
       </div>
       <nav class="flex md:flex-col flex-row overflow-x-auto p-2 md:p-3 gap-1">
         <button onclick="adminNav('overview')" class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="overview"><i class="fas fa-chart-line text-xs w-4"></i> Overview</button>
-        <button onclick="adminNav('manage')"   class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="manage"><i class="fas fa-building text-xs w-4"></i> Manage</button>
+        <button onclick="adminNav('manage')"   class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="manage"><i class="fas fa-building text-xs w-4"></i> Units</button>
         <button onclick="adminNav('bookings')" class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="bookings"><i class="fas fa-calendar-check text-xs w-4"></i> Requests</button>
         <button onclick="adminNav('tenants')"  class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="tenants"><i class="fas fa-users text-xs w-4"></i> Tenants</button>
       </nav>
@@ -251,6 +260,16 @@
           <h2 class="font-display text-2xl md:text-3xl font-bold">Current Tenants</h2>
           <button onclick="openTenantEditor()" class="px-5 py-2.5 bg-sage text-cream rounded-xl text-sm font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-md flex items-center gap-2"><i class="fas fa-plus text-xs"></i> Add Tenant</button>
         </div>
+        <div class="mb-4 flex items-center gap-2 flex-wrap">
+            <input id="tenant-search" type="text" placeholder="Search tenants by name or email" oninput="setTenantSearch(this.value)" class="flex-1 min-w-[180px] px-3 py-2 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none">
+            <span class="text-sm font-medium text-navy/60">Filter:</span>
+          <button data-val="all" onclick="setTenantFilter('all')" class="tenant-filter-chip px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/10 btn-press chip-active">All</button>
+          <button data-val="paid" onclick="setTenantFilter('paid')" class="tenant-filter-chip px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/10 btn-press">Paid</button>
+          <button data-val="unpaid" onclick="setTenantFilter('unpaid')" class="tenant-filter-chip px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/10 btn-press">Unpaid</button>
+          <button data-val="active" onclick="setTenantFilter('active')" class="tenant-filter-chip px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/10 btn-press">Active</button>
+          <button data-val="expiring" onclick="setTenantFilter('expiring')" class="tenant-filter-chip px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/10 btn-press">Expiring</button>
+          <button data-val="inactive" onclick="setTenantFilter('inactive')" class="tenant-filter-chip px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/10 btn-press">Inactive</button>
+        </div>
         <div id="admin-tenants-list" class="space-y-3"></div>
       </div>
     </main>
@@ -268,6 +287,10 @@
         <div class="grid grid-cols-2 gap-3">
           <div><label class="block text-sm font-medium mb-1.5">Monthly Rent (₱)</label><input id="ed-price" type="number" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="25000"></div>
           <div><label class="block text-sm font-medium mb-1.5">Size (sqm)</label><input id="ed-sqm" type="number" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="45"></div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Capacity (max tenants)</label>
+          <input id="ed-capacity" type="number" min="1" value="1" required class="w-48 px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="e.g. 3">
         </div>
         <div>
           <label class="block text-sm font-medium mb-1.5">Bedrooms</label>
@@ -312,6 +335,19 @@
         <div>
           <label class="block text-sm font-medium mb-1.5">Assigned Unit</label>
           <select id="te-unit" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"><option value="">Select a unit…</option></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Payment: Mark Paid</label>
+            <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-warm">
+              <input id="te-paid" type="checkbox" class="form-checkbox" />
+              <span class="text-sm">Paid this period</span>
+            </label>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Last Paid</label>
+            <input id="te-lastpaid" type="date" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" />
+          </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="block text-sm font-medium mb-1.5">Lease Start</label><input id="te-lease-start" type="date" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"></div>
@@ -413,17 +449,28 @@
 <script>
 // ============ DATA ============
 const units = [
-  { id:'u1', name:'Skyline Studio A',  price:18000, sqm:28, beds:'Studio', floor:'15th Floor', amenities:['Pool','Gym','WiFi'],               description:'Bright corner studio with city views. Fully furnished with modern appliances.', status:'active', color:'#4a7c6f' },
-  { id:'u2', name:'Horizon 1-Bedroom', price:28000, sqm:45, beds:'1 BR',   floor:'22nd Floor', amenities:['Pool','Gym','Parking','Balcony'],   description:'Spacious one-bedroom with panoramic sunset views and premium finishes.',       status:'active', color:'#c8553d' },
-  { id:'u3', name:'Garden Suite 2BR',  price:42000, sqm:72, beds:'2 BR',   floor:'8th Floor',  amenities:['Pool','Parking','Balcony','WiFi'],   description:'Family-friendly two-bedroom with garden access and dedicated parking.',       status:'active', color:'#5b6abf' },
-  { id:'u4', name:'Metro Studio B',    price:15000, sqm:24, beds:'Studio', floor:'5th Floor',  amenities:['Gym','WiFi'],                        description:'Compact studio near transit. Ideal for young professionals.',                  status:'draft',  color:'#b07d4b' },
-  { id:'u5', name:'Penthouse Loft',    price:55000, sqm:95, beds:'2 BR',   floor:'30th Floor', amenities:['Pool','Gym','Parking','Balcony','WiFi'], description:'Luxury penthouse loft with rooftop access and designer interiors.',         status:'active', color:'#8b5e83' },
+  { id:'u1', name:'Skyline Studio A',  price:18000, sqm:28, beds:'Studio', floor:'15th Floor', amenities:['Pool','Gym','WiFi'],               description:'Bright corner studio with city views. Fully furnished with modern appliances.', status:'active', color:'#4a7c6f', capacity:1 },
+  { id:'u2', name:'Horizon 1-Bedroom', price:28000, sqm:45, beds:'1 BR',   floor:'22nd Floor', amenities:['Pool','Gym','Parking','Balcony'],   description:'Spacious one-bedroom with panoramic sunset views and premium finishes.',       status:'active', color:'#c8553d', capacity:2 },
+  { id:'u3', name:'Garden Suite 2BR',  price:42000, sqm:72, beds:'2 BR',   floor:'8th Floor',  amenities:['Pool','Parking','Balcony','WiFi'],   description:'Family-friendly two-bedroom with garden access and dedicated parking.',       status:'active', color:'#5b6abf', capacity:2 },
+  { id:'u4', name:'Metro Studio B',    price:15000, sqm:24, beds:'Studio', floor:'5th Floor',  amenities:['Gym','WiFi'],                        description:'Compact studio near transit. Ideal for young professionals.',                  status:'draft',  color:'#b07d4b', capacity:1 },
+  { id:'u5', name:'Penthouse Loft',    price:55000, sqm:95, beds:'2 BR',   floor:'30th Floor', amenities:['Pool','Gym','Parking','Balcony','WiFi'], description:'Luxury penthouse loft with rooftop access and designer interiors.',         status:'active', color:'#8b5e83', capacity:3 },
+  { id:'u6', name:'Bayview 1-BR',      price:30000, sqm:50, beds:'1 BR',   floor:'12th Floor', amenities:['Pool','Gym','Parking'],        description:'Cozy 1BR with bay view and secure parking.',                                   status:'active', color:'#2f8f6a', capacity:2 },
+  { id:'u7', name:'Riverside 2BR',     price:38000, sqm:68, beds:'2 BR',   floor:'6th Floor',  amenities:['Parking','Balcony','WiFi'],   description:'Well-lit 2BR near riverside promenade.',                                        status:'active', color:'#6a5fb0', capacity:3 },
+  { id:'u8', name:'Loft Central',      price:45000, sqm:80, beds:'2 BR',   floor:'18th Floor', amenities:['Pool','Gym','Balcony','WiFi'], description:'Spacious loft in the heart of the city.',                                       status:'active', color:'#be5c7a', capacity:2 },
+  { id:'u9', name:'Campus Studio',     price:12000, sqm:20, beds:'Studio', floor:'3rd Floor',  amenities:['WiFi'],                        description:'Affordable studio, great for students and young professionals.',                 status:'active', color:'#7aa34b', capacity:1 },
+  { id:'u10',name:'Skyline Duplex',    price:75000, sqm:120,beds:'2 BR',   floor:'28th Floor', amenities:['Pool','Gym','Parking','Balcony','WiFi'], description:'Two-level duplex with panoramic skyline views.',                               status:'active', color:'#4b79c8', capacity:4 },
 ];
 const bookings = [];
 const tenants  = [
-  { name:'Maria Santos', unit:'Horizon 1-Bedroom', leaseStart:'2024-06-01', leaseEnd:'2025-05-31', status:'Active',   email:'maria@email.com', phone:'0917-555-1234' },
-  { name:'James Reyes',  unit:'Garden Suite 2BR',  leaseStart:'2024-09-15', leaseEnd:'2025-09-14', status:'Active',   email:'james@email.com', phone:'0918-555-5678' },
-  { name:'Anna Cruz',    unit:'Skyline Studio A',  leaseStart:'2024-01-01', leaseEnd:'2024-12-31', status:'Expiring', email:'anna@email.com',  phone:'0919-555-9012' },
+  { name:'Maria Santos', unit:'Horizon 1-Bedroom', leaseStart:'2024-06-01', leaseEnd:'2025-05-31', status:'Active',   email:'maria@email.com', phone:'0917-555-1234', paid:true,  lastPaid:'2024-12-01' },
+  { name:'James Reyes',  unit:'Garden Suite 2BR',  leaseStart:'2024-09-15', leaseEnd:'2025-09-14', status:'Active',   email:'james@email.com', phone:'0918-555-5678', paid:false, lastPaid:'' },
+  { name:'Anna Cruz',    unit:'Skyline Studio A',  leaseStart:'2024-01-01', leaseEnd:'2024-12-31', status:'Expiring', email:'anna@email.com',  phone:'0919-555-9012', paid:false, lastPaid:'' },
+  { name:'Carl Tan',     unit:'Bayview 1-BR',      leaseStart:'2025-01-01', leaseEnd:'2025-12-31', status:'Active',   email:'carl@email.com',   phone:'0920-555-1111', paid:true,  lastPaid:'2025-03-01' },
+  { name:'Liza Moreno',  unit:'Riverside 2BR',     leaseStart:'2024-11-01', leaseEnd:'2025-10-31', status:'Active',   email:'liza@email.com',   phone:'0921-555-2222', paid:false, lastPaid:'' },
+  { name:'Ken Villan',   unit:'Loft Central',      leaseStart:'2025-02-01', leaseEnd:'2026-01-31', status:'Active',   email:'ken@email.com',    phone:'0922-555-3333', paid:true,  lastPaid:'2025-02-20' },
+  { name:'May Lopez',    unit:'Campus Studio',     leaseStart:'2025-03-01', leaseEnd:'2026-02-28', status:'Active',   email:'may@email.com',    phone:'0923-555-4444', paid:false, lastPaid:'' },
+  { name:'Rico Dela',    unit:'Skyline Duplex',    leaseStart:'2024-12-01', leaseEnd:'2025-11-30', status:'Active',   email:'rico@email.com',   phone:'0924-555-5555', paid:true,  lastPaid:'2025-03-10' },
+  { name:'Ana Gutierrez',unit:'Penthouse Loft',   leaseStart:'2025-01-15', leaseEnd:'2026-01-14', status:'Active',   email:'ana@email.com',    phone:'0925-555-6666', paid:false, lastPaid:'' },
 ];
 
 // ============ STATE ============
@@ -433,7 +480,9 @@ let filters       = { price:'all', beds:'all', amenity:'all' };
 let editorBeds    = 'Studio';
 let editorAmenities = [];
 let editingUnitId = null;
-let nextUnitId    = 6;
+let nextUnitId    = 11;
+let tenantFilter = 'all';
+let tenantSearch = '';
 
 // Calendar state
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -971,9 +1020,13 @@ function renderAO() {
 function renderAUnits() {
   const cont = document.getElementById('admin-units-list'); cont.innerHTML = '';
   units.forEach(u => {
-    const div = document.createElement('div');
-    div.className = 'bg-white rounded-xl p-4 border border-warm flex items-center justify-between flex-wrap gap-3';
-    div.innerHTML = `
+    const item = document.createElement('div');
+    item.className = 'bg-white rounded-xl p-4 border border-warm flex flex-col gap-3';
+
+    const header = document.createElement('div');
+    header.className = 'flex items-center justify-between gap-3';
+    header.onclick = () => toggleUnitTenants(u.id);
+    header.innerHTML = `
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:${u.color}20">${u.beds==='Studio'?'🏙️':u.beds==='1 BR'?'🏠':'🏡'}</div>
         <div>
@@ -982,11 +1035,64 @@ function renderAUnits() {
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="toggleUS('${u.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold btn-press transition-colors ${u.status==='active'?'bg-sage/10 text-sage hover:bg-sage/20':'bg-navy/5 text-navy/40 hover:bg-navy/10'}">${u.status==='active'?'● Active':'○ Draft'}</button>
-        <button onclick="openUnitEditor('${u.id}')" class="px-2.5 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press"><i class="fas fa-edit text-xs"></i></button>
-        <button onclick="deleteUnit('${u.id}')" class="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors btn-press"><i class="fas fa-trash-alt text-xs"></i></button>
+        <div class="text-xs text-navy/40 mr-2">Tenants: ${tenants.filter(t=>t.unit===u.name).length}/${u.capacity||1}</div>
+        <div class="flex items-center gap-2">
+          <button onclick="event.stopPropagation();toggleUS('${u.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold btn-press transition-colors ${u.status==='active'?'bg-sage/10 text-sage hover:bg-sage/20':'bg-navy/5 text-navy/40 hover:bg-navy/10'}">${u.status==='active'?'● Active':'○ Draft'}</button>
+          <button onclick="event.stopPropagation();openUnitEditor('${u.id}')" class="px-2.5 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press"><i class="fas fa-edit text-xs"></i></button>
+          <button onclick="event.stopPropagation();deleteUnit('${u.id}')" class="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors btn-press"><i class="fas fa-trash-alt text-xs"></i></button>
+        </div>
       </div>`;
-    cont.appendChild(div);
+
+    const panel = document.createElement('div');
+    panel.className = 'tenant-panel px-1';
+    panel.id = `unit-tenants-${u.id}`;
+    panel.style.maxHeight = '0px';
+
+    item.appendChild(header);
+    item.appendChild(panel);
+    cont.appendChild(item);
+  });
+}
+
+function toggleUnitTenants(id) {
+  const panel = document.getElementById(`unit-tenants-${id}`);
+  if (!panel) return;
+  const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+  if (isOpen) {
+    // close
+    panel.style.maxHeight = '0px';
+    setTimeout(()=>{ panel.innerHTML = ''; }, 320);
+    return;
+  }
+  // open: populate
+  const unit = units.find(u=>u.id===id);
+  if (!unit) return;
+  const matched = tenants.map((tt, idx) => ({t: tt, idx})).filter(x => x.t.unit === unit.name);
+  if (!matched.length) {
+    panel.innerHTML = `<div class="p-4 text-navy/50">No tenants currently assigned to this unit.</div>`;
+  } else {
+    panel.innerHTML = matched.map(obj => {
+      const t = obj.t; const idx = obj.idx;
+      const payClass = t.paid ? 'bg-sage/10 text-sage' : 'bg-red-100 text-red-800';
+      const payLabel = t.paid ? 'Paid' : 'Overdue';
+      return `
+      <div class="tenant-entry flex items-center justify-between">
+        <div>
+          <div class="text-sm font-semibold">${t.name}</div>
+          <div class="text-xs text-navy/50">${t.email} · ${t.phone}</div>
+          <div class="text-xs text-navy/40">${t.leaseStart} → ${t.leaseEnd}</div>
+          <div class="text-xs text-navy/40 mt-2">Last Paid: ${t.lastPaid||'—'}</div>
+        </div>
+        <div class="flex flex-col items-end gap-2">
+          <span class="px-3 py-1 rounded-full text-xs font-semibold ${t.status==='Active'?'bg-sage/10 text-sage':t.status==='Expiring'?'bg-yellow-100 text-yellow-800':'bg-navy/5 text-navy/40'}">${t.status}</span>
+          <button onclick="toggleTenantPayment(${idx})" class="px-3 py-1 rounded-full text-xs font-semibold ${payClass} btn-press">${payLabel}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  // allow browser to render then set maxHeight to scrollHeight
+  requestAnimationFrame(()=>{
+    panel.style.maxHeight = panel.scrollHeight + 'px';
   });
 }
 function toggleUS(id) {
@@ -1023,10 +1129,12 @@ function openUnitEditor(id) {
     document.getElementById('ed-floor').value=u.floor;
     document.getElementById('ed-desc').value=u.description;
     document.getElementById('ed-id').value=u.id;
+    document.getElementById('ed-capacity').value = u.capacity || 1;
     editorBeds=u.beds; editorAmenities=[...u.amenities];
   } else {
     document.getElementById('editor-title').textContent='Add New Unit';
     ['ed-name','ed-price','ed-sqm','ed-floor','ed-desc','ed-id'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('ed-capacity').value = 1;
     editorBeds='Studio'; editorAmenities=[];
   }
   updateEChips();
@@ -1053,6 +1161,7 @@ function saveUnit(e){
     floor:document.getElementById('ed-floor').value||'TBD',
     amenities:[...editorAmenities],
     description:document.getElementById('ed-desc').value||'Beautiful condo unit available for rent.',
+    capacity: parseInt(document.getElementById('ed-capacity').value) || 1,
   };
   if(editingUnitId) Object.assign(units.find(x=>x.id===editingUnitId),data);
   else units.push({id:'u'+(nextUnitId++), ...data, status:'active', color:colors[Math.floor(Math.random()*colors.length)]});
@@ -1085,30 +1194,80 @@ function updBS(id,status){ const b=bookings.find(x=>x.id===id); if(b){b.status=s
 function renderATenants(){
   const cont=document.getElementById('admin-tenants-list'); cont.innerHTML='';
   if(!tenants.length){cont.innerHTML='<div class="text-center py-16 text-lg text-navy/50">No tenants yet.</div>';return;}
-  tenants.forEach((t,idx)=>{
+  // build list of {t, idx} so we can keep original indices for actions
+  const items = tenants.map((t,idx)=>({t,idx})).filter(obj=>{
+    const t = obj.t;
+    // Filter by status/payment
+    if (tenantFilter === 'paid' && !t.paid) return false;
+    if (tenantFilter === 'unpaid' && t.paid) return false;
+    if (tenantFilter === 'active' && (t.status||'').toLowerCase() !== 'active') return false;
+    if (tenantFilter === 'expiring' && (t.status||'').toLowerCase() !== 'expiring') return false;
+    if (tenantFilter === 'inactive' && (t.status||'').toLowerCase() !== 'inactive') return false;
+    // Search term (name or email)
+    if (tenantSearch && tenantSearch.trim()){
+      const s = tenantSearch.trim().toLowerCase();
+      const name = (t.name||'').toLowerCase();
+      const email = (t.email||'').toLowerCase();
+      if (!name.includes(s) && !email.includes(s)) return false;
+    }
+    return true;
+  });
+  if(!items.length){ cont.innerHTML = '<div class="text-center py-12 text-navy/50">No tenants match this filter.</div>'; return; }
+  items.forEach(obj=>{
+    const t = obj.t; const idx = obj.idx;
     const div=document.createElement('div');
     div.className='bg-white rounded-xl p-4 border border-warm flex items-center justify-between flex-wrap gap-3';
     const sc=t.status==='Active'?'bg-sage/10 text-sage':t.status==='Expiring'?'bg-yellow-100 text-yellow-800':'bg-navy/5 text-navy/40';
+    const payClass = t.paid ? 'bg-sage/10 text-sage' : 'bg-red-100 text-red-800';
+    const payLabel = t.paid ? 'Paid' : 'Overdue';
     div.innerHTML=`
       <div>
         <div class="text-sm font-semibold">${t.name}</div>
         <div class="text-xs text-navy/50">${t.unit} · ${t.email}</div>
         <div class="text-xs text-navy/40">${t.leaseStart} → ${t.leaseEnd}</div>
+        <div class="text-xs text-navy/40 mt-2">Last Paid: ${t.lastPaid||'—'}</div>
       </div>
       <div class="flex items-center gap-2">
         <span class="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${sc}">${t.status}</span>
+        <button onclick="toggleTenantPayment(${idx})" class="px-2.5 py-1 rounded-full text-xs font-semibold ${payClass} btn-press">${payLabel}</button>
         <button onclick="openTenantEditor(${idx})" class="px-2.5 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press"><i class="fas fa-edit text-xs"></i></button>
         <button onclick="deleteTenant(${idx})" class="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors btn-press"><i class="fas fa-trash-alt text-xs"></i></button>
       </div>`;
     cont.appendChild(div);
   });
 }
+function toggleTenantPayment(idx){
+  const t = tenants[idx]; if(!t) return;
+  t.paid = !t.paid;
+  if(t.paid) {
+    const d = new Date();
+    t.lastPaid = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  renderATenants();
+  if (selectedUnitId) updateSelectedUnitTenantPanel();
+}
+function setTenantFilter(val){
+  tenantFilter = val;
+  document.querySelectorAll('.tenant-filter-chip').forEach(c=>c.classList.toggle('chip-active', c.dataset.val===val));
+  renderATenants();
+}
+
+function setTenantSearch(val){
+  tenantSearch = val || '';
+  renderATenants();
+}
 function openTenantEditor(id){
   document.getElementById('tenant-editor-modal').classList.remove('hidden');
   const sel=document.getElementById('te-unit');
   sel.innerHTML='<option value="">Select a unit…</option>';
+  const editIndex = (typeof id === 'number') ? id : null;
+  const editUnitName = (editIndex !== null && tenants[editIndex]) ? tenants[editIndex].unit : null;
   units.filter(u=>u.status==='active').forEach(u=>{
-    const o=document.createElement('option'); o.value=u.name; o.textContent=u.name; sel.appendChild(o);
+    const count = tenants.filter(t=>t.unit===u.name).length;
+    const o=document.createElement('option'); o.value=u.name; o.textContent=`${u.name} (${count}/${(u.capacity||1)})`;
+    // Allow selecting the currently-assigned unit when editing even if it's at capacity
+    if ((u.capacity||1) <= count && u.name !== editUnitName) { o.disabled = true; o.textContent += ' — Full'; }
+    sel.appendChild(o);
   });
   if(typeof id==='number'){
     const t=tenants[id]; if(!t) return;
@@ -1121,11 +1280,15 @@ function openTenantEditor(id){
     document.getElementById('te-lease-end').value=t.leaseEnd;
     document.getElementById('te-id').value=id;
     document.getElementById('te-status').value=t.status;
+    document.getElementById('te-paid').checked = !!t.paid;
+    document.getElementById('te-lastpaid').value = t.lastPaid || '';
     document.getElementById('te-submit-btn').textContent='Update Tenant';
   } else {
     document.getElementById('tenant-editor-title').textContent='Add New Tenant';
     ['te-name','te-email','te-phone','te-lease-start','te-lease-end'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('te-unit').value='';
+    document.getElementById('te-paid').checked = false;
+    document.getElementById('te-lastpaid').value = '';
     document.getElementById('te-id').value='';
     document.getElementById('te-status').value='Active';
     document.getElementById('te-submit-btn').textContent='Save Tenant';
@@ -1149,9 +1312,26 @@ function saveTenant(e){
     leaseStart:document.getElementById('te-lease-start').value,
     leaseEnd:document.getElementById('te-lease-end').value,
     status:document.getElementById('te-status').value,
+    paid: !!document.getElementById('te-paid').checked,
+    lastPaid: document.getElementById('te-lastpaid').value || ''
   };
-  if(id!==''){const idx=parseInt(id);if(tenants[idx])Object.assign(tenants[idx],data);}
-  else tenants.push({...data});
+  // Prevent assigning when unit is full (account for edits)
+  if (!data.unit) { alert('Please select a unit.'); return; }
+  const unitObj = units.find(u=>u.name===data.unit);
+  let occupancy = tenants.filter(t=>t.unit===data.unit).length;
+  if (id!=='') {
+    const idx = parseInt(id);
+    const orig = tenants[idx];
+    if (orig && orig.unit === data.unit) {
+      // editing but staying in same unit — allow
+      occupancy = occupancy - 1; // exclude current tenant from count
+    }
+  }
+  if (unitObj && typeof unitObj.capacity==='number' && occupancy >= unitObj.capacity) {
+    alert('This unit is already full. Choose another unit or increase its capacity.');
+    return;
+  }
+  if(id!==''){const idx=parseInt(id);if(tenants[idx])Object.assign(tenants[idx],data);} else tenants.push({...data});
   closeTenantEditor(); renderATenants();
 }
 function deleteTenant(id){
