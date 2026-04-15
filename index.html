@@ -52,6 +52,7 @@
     .cal-day.avail  { background:#dcfce7; border-color:#4ade80; color:#166534; cursor:pointer; }
     .cal-day.avail:hover { background:#bbf7d0; border-color:#22c55e; transform:scale(1.08); }
     .cal-day.taken  { background:#fee2e2; border-color:#f87171; color:#991b1b; cursor:not-allowed; }
+    .cal-day.busy   { background:#fff7ed; border-color:#f59e0b; color:#92400e; cursor:not-allowed; }
     .cal-day.past   { background:#f3f4f6; color:#d1d5db; cursor:not-allowed; }
     .cal-day.selday { background:#0f1b2d !important; border-color:#0f1b2d !important; color:#faf8f4 !important; }
     .cal-day.today-ring { box-shadow: 0 0 0 2px #c8553d; }
@@ -102,7 +103,7 @@
       <section class="px-4 md:px-6 py-12 md:py-24 max-w-5xl mx-auto text-center">
         <h1 id="hero-headline" class="font-display text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-5">Find Your Perfect Condo</h1>
         <p id="hero-subtext" class="text-lg sm:text-xl text-navy/60 max-w-2xl mx-auto mb-8">Browse premium condominiums with transparent pricing, verified amenities, and instant viewing requests.</p>
-        <button onclick="navigateTo('units')" class="px-8 py-4 bg-accent text-cream text-xl font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all btn-press">Browse Available Units →</button>
+        <button id="hero-browse-btn" onclick="promptVisitorInfoAndGo()" class="px-8 py-4 bg-accent text-cream text-xl font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all btn-press">Browse Available Units</button>
       </section>
     </div>
 
@@ -110,7 +111,15 @@
     <div id="view-units" class="fade-in hidden">
       <section class="px-4 md:px-6 py-6 md:py-10 max-w-6xl mx-auto">
         <h2 class="font-display text-2xl md:text-3xl font-bold mb-6">Available Condos</h2>
-        <div class="mb-8 space-y-3">
+        <div class="mb-4">
+          <div class="flex items-center gap-2">
+            <input id="unit-search" type="text" placeholder="Search available units (name, description, amenity)" oninput="setUnitSearch(this.value)" class="flex-1 px-4 py-2.5 rounded-2xl border-2 border-warm text-sm focus:border-navy focus:outline-none" />
+            <button id="filter-toggle-btn" onclick="toggleFilters()" class="px-3 py-2 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press" title="Show filters">
+              <i class="fas fa-filter text-sm"></i>
+            </button>
+          </div>
+        </div>
+        <div id="filters-panel" class="mb-8 space-y-3 hidden">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-sm font-semibold">Budget:</span>
             <button onclick="setFilter('price','all')"    class="filter-chip-price px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press chip-active" data-val="all">All</button>
@@ -129,9 +138,9 @@
             <span class="text-sm font-semibold">Amenity:</span>
             <!-- data-val uses Title Case to match unit.amenities directly — no normalization needed -->
             <button onclick="setFilter('amenity','all')"      class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press chip-active" data-val="all">All</button>
-            <button onclick="setFilter('amenity','Pool')"     class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Pool">🏊 Pool</button>
-            <button onclick="setFilter('amenity','Gym')"      class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Gym">🏋️ Gym</button>
-            <button onclick="setFilter('amenity','Parking')"  class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Parking">🅿️ Parking</button>
+            <button onclick="setFilter('amenity','Pool')"     class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Pool">Pool</button>
+            <button onclick="setFilter('amenity','Gym')"      class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Gym">Gym</button>
+            <button onclick="setFilter('amenity','Parking')"  class="filter-chip-amenity px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Parking">Parking</button>
           </div>
         </div>
         <div id="units-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"></div>
@@ -246,7 +255,48 @@
       <div id="admin-manage" class="p-5 md:p-8 fade-in hidden">
         <div class="flex items-center justify-between mb-7 flex-wrap gap-3">
           <h2 class="font-display text-2xl md:text-3xl font-bold">Manage Units</h2>
-          <button onclick="openUnitEditor()" class="px-5 py-2.5 bg-sage text-cream rounded-xl text-sm font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-md flex items-center gap-2"><i class="fas fa-plus text-xs"></i> Add Unit</button>
+          <div class="flex items-center gap-2">
+            <div class="relative">
+              <input id="admin-unit-search" type="text" placeholder="Search units by name or amenity" oninput="setAdminUnitSearch(this.value)" class="px-3 py-2 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none w-56" />
+              <button type="button" onclick="clearAdminUnitSearch()" title="Clear" class="absolute right-1 top-1/2 -translate-y-1/2 text-navy/40 hover:text-navy px-2">✕</button>
+            </div>
+            <button id="admin-filter-btn" onclick="toggleAdminFilters()" class="px-3 py-2 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press" title="Show filters">
+              <i class="fas fa-filter text-sm"></i>
+            </button>
+            <div class="flex items-center gap-2">
+              <button onclick="openBusyModal()" class="px-4 py-2.5 bg-yellow-50 text-yellow-700 rounded-xl text-sm font-semibold hover:bg-yellow-100 transition-colors btn-press shadow-md flex items-center gap-2"><i class="fas fa-calendar-day text-xs"></i> Busy Schedule</button>
+              <button onclick="openUnitEditor()" class="px-5 py-2.5 bg-sage text-cream rounded-xl text-sm font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-md flex items-center gap-2"><i class="fas fa-plus text-xs"></i> Add Unit</button>
+            </div>
+          </div>
+        </div>
+        <div id="admin-manage-filters" class="hidden mb-4">
+          <div class="flex items-center gap-4 flex-wrap">
+            <div>
+              <div class="text-sm font-semibold mb-2">Status</div>
+              <div class="flex gap-2">
+                <button data-val="all" onclick="setAdminFilter('status','all')" class="admin-filter-status px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press chip-active">All</button>
+                <button data-val="active" onclick="setAdminFilter('status','active')" class="admin-filter-status px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">Active</button>
+                <button data-val="draft" onclick="setAdminFilter('status','draft')" class="admin-filter-status px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">Draft</button>
+              </div>
+            </div>
+            <div>
+              <div class="text-sm font-semibold mb-2">Unit Type</div>
+              <div class="flex gap-2">
+                <button data-val="all" onclick="setAdminFilter('beds','all')" class="admin-filter-beds px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press chip-active">All</button>
+                <button data-val="studio" onclick="setAdminFilter('beds','studio')" class="admin-filter-beds px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">Studio</button>
+                <button data-val="1" onclick="setAdminFilter('beds','1')" class="admin-filter-beds px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">1 BR</button>
+                <button data-val="2" onclick="setAdminFilter('beds','2')" class="admin-filter-beds px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">2 BR</button>
+              </div>
+            </div>
+            <div>
+              <div class="text-sm font-semibold mb-2">Occupancy</div>
+              <div class="flex gap-2">
+                <button data-val="all" onclick="setAdminFilter('occupancy','all')" class="admin-filter-occupancy px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press chip-active">All</button>
+                <button data-val="occupied" onclick="setAdminFilter('occupancy','occupied')" class="admin-filter-occupancy px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">Occupied</button>
+                <button data-val="vacant" onclick="setAdminFilter('occupancy','vacant')" class="admin-filter-occupancy px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">Vacant</button>
+              </div>
+            </div>
+          </div>
         </div>
         <div id="admin-units-list" class="space-y-3"></div>
       </div>
@@ -304,11 +354,11 @@
         <div>
           <label class="block text-sm font-medium mb-1.5">Amenities</label>
           <div class="flex gap-2 flex-wrap">
-            <button type="button" onclick="toggleAmenity('Pool')"    class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Pool">🏊 Pool</button>
-            <button type="button" onclick="toggleAmenity('Gym')"     class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Gym">🏋️ Gym</button>
-            <button type="button" onclick="toggleAmenity('Parking')" class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Parking">🅿️ Parking</button>
-            <button type="button" onclick="toggleAmenity('Balcony')" class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Balcony">🌅 Balcony</button>
-            <button type="button" onclick="toggleAmenity('WiFi')"    class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="WiFi">📶 WiFi</button>
+              <button type="button" onclick="toggleAmenity('Pool')"    class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Pool">Pool</button>
+              <button type="button" onclick="toggleAmenity('Gym')"     class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Gym">Gym</button>
+              <button type="button" onclick="toggleAmenity('Parking')" class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Parking">Parking</button>
+              <button type="button" onclick="toggleAmenity('Balcony')" class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="Balcony">Balcony</button>
+              <button type="button" onclick="toggleAmenity('WiFi')"    class="amenity-chip px-4 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 transition-all btn-press" data-val="WiFi">WiFi</button>
           </div>
         </div>
         <div><label class="block text-sm font-medium mb-1.5">Description</label><textarea id="ed-desc" rows="3" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none resize-none" placeholder="Brief description…"></textarea></div>
@@ -318,6 +368,37 @@
           <button type="button" onclick="closeUnitEditor()" class="px-5 py-3 bg-warm rounded-xl text-sm font-medium hover:bg-navy/10 transition-colors btn-press">Cancel</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ====== BUSY DATES MODAL ====== -->
+  <div id="busy-dates-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+    <div class="bg-cream rounded-3xl shadow-2xl w-full max-w-md p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-display text-2xl font-bold" id="busy-modal-title">Manage Busy Dates</h3>
+        <button onclick="closeBusyModal()" class="p-2 hover:bg-warm rounded-xl transition-colors"><i class="fas fa-times text-sm"></i></button>
+      </div>
+      <form onsubmit="addBusyRange(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium mb-1">Start Date</label>
+            <input id="busy-start" type="date" required class="w-full px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">End Date</label>
+            <input id="busy-end" type="date" required class="w-full px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none">
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" class="px-4 py-2 bg-sage text-cream rounded-xl text-sm font-semibold btn-press">Mark Busy Range</button>
+          <button type="button" onclick="clearBusyDatesForCurrentUnit()" class="px-4 py-2 bg-warm rounded-xl text-sm font-medium btn-press">Clear All</button>
+          <button type="button" onclick="closeBusyModal()" class="px-4 py-2 bg-navy text-cream rounded-xl text-sm font-medium btn-press">Close</button>
+        </div>
+      </form>
+      <div class="mt-4">
+        <h4 class="text-sm font-semibold mb-2">Existing Busy Dates</h4>
+        <div id="busy-dates-list" class="space-y-2 text-sm text-navy/60">No busy dates set.</div>
+      </div>
     </div>
   </div>
 
@@ -391,6 +472,7 @@
           <div class="flex items-center gap-4 mb-2.5 text-xs font-medium text-navy/70">
             <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-green-100 border-2 border-green-400"></span>Available</span>
             <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-red-100 border-2 border-red-400"></span>Booked</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-yellow-100 border-2 border-yellow-400"></span>Busy</span>
             <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-gray-100 border border-gray-300"></span>Past</span>
           </div>
 
@@ -427,6 +509,34 @@
           </div>
         </div>
 
+          <!-- VISITOR INFO MODAL (collect contact once on first Browse) -->
+          <div id="visitor-info-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+            <div class="bg-cream rounded-3xl shadow-2xl w-full max-w-md p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-display text-2xl font-bold">Before you browse</h3>
+                <button onclick="closeVisitorModal()" class="p-2 hover:bg-warm rounded-xl transition-colors"><i class="fas fa-times text-sm"></i></button>
+              </div>
+              <p class="text-sm text-navy/60 mb-4">Enter your name, email, and phone once so you won't need to re-enter them when requesting viewings.</p>
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-sm font-medium mb-1">Full name</label>
+                  <input id="v-name" type="text" required class="w-full px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">Email</label>
+                  <input id="v-email" type="email" required class="w-full px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">Phone</label>
+                  <input id="v-phone" type="tel" required class="w-full px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none">
+                </div>
+                <div class="flex gap-3 pt-1">
+                  <button id="v-continue-btn" type="button" onclick="saveVisitorInfo(event)" class="flex-1 px-4 py-2 bg-sage text-cream rounded-xl font-semibold btn-press">Continue</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
         <!-- Hidden datetime value -->
         <input type="hidden" id="bk-datetime">
         <input type="hidden" id="bk-unit-id">
@@ -434,7 +544,7 @@
         <div><label class="block text-sm font-medium mb-1.5">Message (optional)</label><textarea id="bk-msg" rows="2" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none resize-none" placeholder="Any questions or preferences?"></textarea></div>
 
         <div id="booking-success" class="hidden bg-sage/10 border-2 border-sage rounded-xl p-5 text-center">
-          <div class="text-3xl mb-2">✅</div>
+          <div class="text-3xl mb-2"><i class="fas fa-check-circle"></i></div>
           <div class="text-base font-semibold text-sage">Request Submitted!</div>
           <div class="text-navy/60 text-sm mt-1">We'll contact you within 24 hours.</div>
         </div>
@@ -449,18 +559,55 @@
 <script>
 // ============ DATA ============
 const units = [
-  { id:'u1', name:'Skyline Studio A',  price:18000, sqm:28, beds:'Studio', floor:'15th Floor', amenities:['Pool','Gym','WiFi'],               description:'Bright corner studio with city views. Fully furnished with modern appliances.', status:'active', color:'#4a7c6f', capacity:1 },
-  { id:'u2', name:'Horizon 1-Bedroom', price:28000, sqm:45, beds:'1 BR',   floor:'22nd Floor', amenities:['Pool','Gym','Parking','Balcony'],   description:'Spacious one-bedroom with panoramic sunset views and premium finishes.',       status:'active', color:'#c8553d', capacity:2 },
-  { id:'u3', name:'Garden Suite 2BR',  price:42000, sqm:72, beds:'2 BR',   floor:'8th Floor',  amenities:['Pool','Parking','Balcony','WiFi'],   description:'Family-friendly two-bedroom with garden access and dedicated parking.',       status:'active', color:'#5b6abf', capacity:2 },
+  { id:'u1', name:'Skyline Studio A',  price:18000, sqm:28, beds:'Studio', floor:'15th Floor', amenities:['Pool','Gym','WiFi'],               description:'Bright corner studio with city views. Fully furnished with modern appliances.', status:'active', color:'#4a7c6f', capacity:1, video:'https://www.w3schools.com/html/mov_bbb.mp4' },
+  { id:'u2', name:'Horizon 1-Bedroom', price:28000, sqm:45, beds:'1 BR',   floor:'22nd Floor', amenities:['Pool','Gym','Parking','Balcony'],   description:'Spacious one-bedroom with panoramic sunset views and premium finishes.',       status:'active', color:'#c8553d', capacity:2, video:'https://www.w3schools.com/html/mov_bbb.mp4' },
+  { id:'u3', name:'Garden Suite 2BR',  price:42000, sqm:72, beds:'2 BR',   floor:'8th Floor',  amenities:['Pool','Parking','Balcony','WiFi'],   description:'Family-friendly two-bedroom with garden access and dedicated parking.',       status:'active', color:'#5b6abf', capacity:2, video:'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
   { id:'u4', name:'Metro Studio B',    price:15000, sqm:24, beds:'Studio', floor:'5th Floor',  amenities:['Gym','WiFi'],                        description:'Compact studio near transit. Ideal for young professionals.',                  status:'draft',  color:'#b07d4b', capacity:1 },
-  { id:'u5', name:'Penthouse Loft',    price:55000, sqm:95, beds:'2 BR',   floor:'30th Floor', amenities:['Pool','Gym','Parking','Balcony','WiFi'], description:'Luxury penthouse loft with rooftop access and designer interiors.',         status:'active', color:'#8b5e83', capacity:3 },
-  { id:'u6', name:'Bayview 1-BR',      price:30000, sqm:50, beds:'1 BR',   floor:'12th Floor', amenities:['Pool','Gym','Parking'],        description:'Cozy 1BR with bay view and secure parking.',                                   status:'active', color:'#2f8f6a', capacity:2 },
-  { id:'u7', name:'Riverside 2BR',     price:38000, sqm:68, beds:'2 BR',   floor:'6th Floor',  amenities:['Parking','Balcony','WiFi'],   description:'Well-lit 2BR near riverside promenade.',                                        status:'active', color:'#6a5fb0', capacity:3 },
-  { id:'u8', name:'Loft Central',      price:45000, sqm:80, beds:'2 BR',   floor:'18th Floor', amenities:['Pool','Gym','Balcony','WiFi'], description:'Spacious loft in the heart of the city.',                                       status:'active', color:'#be5c7a', capacity:2 },
-  { id:'u9', name:'Campus Studio',     price:12000, sqm:20, beds:'Studio', floor:'3rd Floor',  amenities:['WiFi'],                        description:'Affordable studio, great for students and young professionals.',                 status:'active', color:'#7aa34b', capacity:1 },
-  { id:'u10',name:'Skyline Duplex',    price:75000, sqm:120,beds:'2 BR',   floor:'28th Floor', amenities:['Pool','Gym','Parking','Balcony','WiFi'], description:'Two-level duplex with panoramic skyline views.',                               status:'active', color:'#4b79c8', capacity:4 },
+  { id:'u5', name:'Penthouse Loft',    price:55000, sqm:95, beds:'2 BR',   floor:'30th Floor', amenities:['Pool','Gym','Parking','Balcony','WiFi'], description:'Luxury penthouse loft with rooftop access and designer interiors.',         status:'active', color:'#8b5e83', capacity:3, video:'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
+  { id:'u6', name:'Bayview 1-BR',      price:30000, sqm:50, beds:'1 BR',   floor:'12th Floor', amenities:['Pool','Gym','Parking'],        description:'Cozy 1BR with bay view and secure parking.',                                   status:'active', color:'#2f8f6a', capacity:2, video:'https://www.w3schools.com/html/mov_bbb.mp4' },
+  { id:'u7', name:'Riverside 2BR',     price:38000, sqm:68, beds:'2 BR',   floor:'6th Floor',  amenities:['Parking','Balcony','WiFi'],   description:'Well-lit 2BR near riverside promenade.',                                        status:'active', color:'#6a5fb0', capacity:3, video:'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
+  { id:'u8', name:'Loft Central',      price:45000, sqm:80, beds:'2 BR',   floor:'18th Floor', amenities:['Pool','Gym','Balcony','WiFi'], description:'Spacious loft in the heart of the city.',                                       status:'active', color:'#be5c7a', capacity:2, video:'https://www.w3schools.com/html/mov_bbb.mp4' },
+  { id:'u9', name:'Campus Studio',     price:12000, sqm:20, beds:'Studio', floor:'3rd Floor',  amenities:['WiFi'],                        description:'Affordable studio, great for students and young professionals.',                 status:'active', color:'#7aa34b', capacity:1, video:'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
+  { id:'u10',name:'Skyline Duplex',    price:75000, sqm:120,beds:'2 BR',   floor:'28th Floor', amenities:['Pool','Gym','Parking','Balcony','WiFi'], description:'Two-level duplex with panoramic skyline views.',                               status:'active', color:'#4b79c8', capacity:4, video:'https://www.w3schools.com/html/mov_bbb.mp4' },
 ];
-const bookings = [];
+const bookings = [
+  {
+    id: 'b_sample_pending',
+    unitName: 'Skyline Studio A',
+    name: 'Test Pending',
+    email: 'pending@example.com',
+    phone: '0917-000-0001',
+    datetime: '2026-04-20T09:00',
+    dateStr: '4/20/2026',
+    timeStr: '9:00 AM',
+    message: 'I\'d like to see this studio.',
+    status: 'Pending'
+  },
+  {
+    id: 'b_sample_confirmed',
+    unitName: 'Horizon 1-Bedroom',
+    name: 'Test Confirmed',
+    email: 'confirmed@example.com',
+    phone: '0917-000-0002',
+    datetime: '2026-04-22T14:00',
+    dateStr: '4/22/2026',
+    timeStr: '2:00 PM',
+    message: 'Looking forward to it.',
+    status: 'Confirmed'
+  },
+  {
+    id: 'b_sample_declined',
+    unitName: 'Garden Suite 2BR',
+    name: 'Test Declined',
+    email: 'declined@example.com',
+    phone: '0917-000-0003',
+    datetime: '2026-04-18T11:00',
+    dateStr: '4/18/2026',
+    timeStr: '11:00 AM',
+    message: 'Please cancel my request.',
+    status: 'Declined'
+  }
+];
 const tenants  = [
   { name:'Maria Santos', unit:'Horizon 1-Bedroom', leaseStart:'2024-06-01', leaseEnd:'2025-05-31', status:'Active',   email:'maria@email.com', phone:'0917-555-1234', paid:true,  lastPaid:'2024-12-01' },
   { name:'James Reyes',  unit:'Garden Suite 2BR',  leaseStart:'2024-09-15', leaseEnd:'2025-09-14', status:'Active',   email:'james@email.com', phone:'0918-555-5678', paid:false, lastPaid:'' },
@@ -473,16 +620,24 @@ const tenants  = [
   { name:'Ana Gutierrez',unit:'Penthouse Loft',   leaseStart:'2025-01-15', leaseEnd:'2026-01-14', status:'Active',   email:'ana@email.com',    phone:'0925-555-6666', paid:false, lastPaid:'' },
 ];
 
+// Visitor contact (persist while browsing)
+window.visitor = { name:'', email:'', phone:'' };
+window._pendingBookingUnitId = null;
+
 // ============ STATE ============
 let currentView   = 'home';
 let chatOpen      = false;
 let filters       = { price:'all', beds:'all', amenity:'all' };
+let unitSearch    = '';
 let editorBeds    = 'Studio';
 let editorAmenities = [];
 let editingUnitId = null;
 let nextUnitId    = 11;
 let tenantFilter = 'all';
 let tenantSearch = '';
+let adminUnitSearch = '';
+let adminFilters = { status: 'all', beds: 'all', occupancy: 'all' };
+let globalBusyDates = [];
 
 // Calendar state
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -496,6 +651,8 @@ const TIME_SLOTS  = [
 let calYear, calMonth;
 let calSelDate = null;   // Date object (midnight local)
 let calSelTime = null;   // "HH:MM"
+
+
 
 // ============ NAV ============
 function navigateTo(view) {
@@ -511,7 +668,11 @@ function navigateTo(view) {
   ['home','units','detail','bookings'].forEach(v =>
     document.getElementById('view-'+v).classList.toggle('hidden', v !== view));
   currentView = view;
-  if (view==='units')    renderUnits();
+  if (view==='units') {
+    renderUnits();
+    // show persistent visitor banner if contact not provided
+    if (!(window.visitor && window.visitor.name && window.visitor.email && window.visitor.phone)) showVisitorBanner(); else hideVisitorBanner();
+  }
   if (view==='bookings') renderGuestBookings();
   updateNavHL();
   window.scrollTo(0,0);
@@ -565,12 +726,32 @@ function getFiltered() {
     // AND logic: unit must have ALL selected amenities
     if (filters.amenity !== 'all' && Array.isArray(filters.amenity) && filters.amenity.length)
       if (!filters.amenity.every(a => u.amenities.includes(a))) return false;
+    // Search text: match name, description, beds, floor, or amenities
+    if (unitSearch && unitSearch.trim()) {
+      const s = unitSearch.trim().toLowerCase();
+      const hay = `${u.name} ${u.description} ${u.beds} ${u.floor} ${u.amenities.join(' ')}`.toLowerCase();
+      if (!hay.includes(s)) return false;
+    }
     return true;
   });
 }
 
+function setUnitSearch(val) {
+  unitSearch = val || '';
+  renderUnits();
+}
+
+function toggleFilters() {
+  const p = document.getElementById('filters-panel');
+  const btn = document.getElementById('filter-toggle-btn');
+  if (!p) return;
+  const isHidden = p.classList.contains('hidden');
+  p.classList.toggle('hidden', !isHidden);
+  if (btn) btn.classList.toggle('chip-active', !isHidden);
+}
+
 // ============ UNITS ============
-function aEmoji(a) { return {Pool:'🏊',Gym:'🏋️',Parking:'🅿️',Balcony:'🌅',WiFi:'📶'}[a]||'✨'; }
+function aEmoji(a) { return ''; }
 
 function renderUnits() {
   const grid     = document.getElementById('units-grid');
@@ -583,7 +764,7 @@ function renderUnits() {
     c.onclick = () => showDetail(u.id);
     c.innerHTML = `
       <div class="h-36 flex items-center justify-center" style="background:${u.color}20">
-        <div class="text-5xl">${u.beds==='Studio'?'🏙️':u.beds==='1 BR'?'🏠':'🏡'}</div>
+        <div class="text-5xl"><i class="fas fa-bed"></i></div>
       </div>
       <div class="p-4">
         <div class="flex items-start justify-between gap-2 mb-1.5">
@@ -607,8 +788,11 @@ function showDetail(id) {
   const u = units.find(x => x.id === id); if (!u) return;
   document.getElementById('detail-content').innerHTML = `
     <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-warm">
-      <div class="h-48 flex items-center justify-center" style="background:${u.color}15">
-        <div class="text-7xl">${u.beds==='Studio'?'🏙️':u.beds==='1 BR'?'🏠':'🏡'}</div>
+      <div id="detail-slideshow" class="h-48 md:h-64 relative overflow-hidden bg-gray-100">
+        <img id="detail-slide-img" src="" alt="${u.name}" class="w-full h-full object-cover">
+        <button type="button" onclick="detailPrev()" class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-sm"><i class="fas fa-chevron-left"></i></button>
+        <button type="button" onclick="detailNext()" class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-sm"><i class="fas fa-chevron-right"></i></button>
+        <div id="detail-slide-dots" class="absolute left-1/2 -translate-x-1/2 bottom-3 flex gap-2"></div>
       </div>
       <div class="p-7">
         <div class="flex items-start justify-between flex-wrap gap-4 mb-4">
@@ -617,20 +801,32 @@ function showDetail(id) {
         </div>
         <p class="text-base text-navy/60 mb-6">${u.description}</p>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1">🛏️</div><div class="text-sm font-medium">${u.beds}</div></div>
-          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1">📐</div><div class="text-sm font-medium">${u.sqm} sqm</div></div>
-          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1">🏢</div><div class="text-sm font-medium">${u.floor}</div></div>
-          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1">✅</div><div class="text-sm font-medium">Available</div></div>
+          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1"><i class="fas fa-bed"></i></div><div class="text-sm font-medium">${u.beds}</div></div>
+          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1"><i class="fas fa-ruler"></i></div><div class="text-sm font-medium">${u.sqm} sqm</div></div>
+          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1"><i class="fas fa-building"></i></div><div class="text-sm font-medium">${u.floor}</div></div>
+          <div class="bg-cream rounded-xl p-3 text-center"><div class="text-xl mb-1"><i class="fas fa-check"></i></div><div class="text-sm font-medium">Available</div></div>
         </div>
         <div class="mb-5">
           <h3 class="text-base font-semibold mb-2">Amenities</h3>
           <div class="flex gap-2 flex-wrap">${u.amenities.map(a=>`<span class="px-3 py-1.5 bg-cream rounded-lg text-sm font-medium">${aEmoji(a)} ${a}</span>`).join('')}</div>
         </div>
+        
+        <div id="detail-preview-video-wrap" class="mb-4">
+          <video id="detail-preview-video" class="w-full rounded-xl hidden" controls playsinline>
+            <source id="detail-preview-src" src="" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
         <button onclick="openBooking('${u.id}')" class="w-full px-5 py-3.5 bg-accent text-cream rounded-xl text-base font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-lg">Request a Viewing →</button>
       </div>
     </div>`;
   navigateTo('detail');
+  initDetailSlideshow(u.id);
+  initDetailVideo(u.id);
 }
+
+  
 
 // ============ CALENDAR HELPERS ============
 function calDateStr(y, m, d) {
@@ -638,16 +834,24 @@ function calDateStr(y, m, d) {
 }
 function calBookedDates(unitId) {
   const unit = units.find(u => u.id === unitId);
-  const set  = new Set();
-  if (!unit) return set;
+  const booked = new Set();
+  const busy = new Set();
+  if (!unit) return { booked, busy };
   bookings.forEach(b => {
     if (b.unitName === unit.name) {
       const dt = new Date(b.datetime);
-      set.add(calDateStr(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+      booked.add(calDateStr(dt.getFullYear(), dt.getMonth(), dt.getDate()));
     }
   });
-  return set;
+  if (Array.isArray(unit.busyDates)) {
+    unit.busyDates.forEach(ds => busy.add(ds));
+  }
+  if (Array.isArray(globalBusyDates)) {
+    globalBusyDates.forEach(ds => busy.add(ds));
+  }
+  return { booked, busy };
 }
+
 function calBookedSlots(unitId, dateStr) {
   const unit = units.find(u => u.id === unitId);
   const set  = new Set();
@@ -659,13 +863,17 @@ function calBookedSlots(unitId, dateStr) {
       if (ds === dateStr) set.add(`${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`);
     }
   });
+  // If admin marked the whole date as busy, mark all slots taken
+  if ((Array.isArray(unit.busyDates) && unit.busyDates.includes(dateStr)) || (Array.isArray(globalBusyDates) && globalBusyDates.includes(dateStr))) {
+    TIME_SLOTS.forEach(s => set.add(s.val));
+  }
   return set;
 }
 
 // ============ CALENDAR RENDER ============
 function calRender() {
   const unitId = document.getElementById('bk-unit-id').value;
-  const booked = calBookedDates(unitId);
+  const { booked, busy } = calBookedDates(unitId);
   const today  = new Date(); today.setHours(0,0,0,0);
 
   document.getElementById('cal-label').textContent = `${MONTH_NAMES[calMonth]} ${calYear}`;
@@ -692,6 +900,7 @@ function calRender() {
     cellDate.setHours(0,0,0,0);
     const ds       = calDateStr(calYear, calMonth, d);
     const isPast   = cellDate < today;
+    const isBusy   = busy.has(ds);
     const isBooked = booked.has(ds);
     const isSel    = calSelDate && calSelDate.getTime() === cellDate.getTime();
     const isToday  = cellDate.getTime() === today.getTime();
@@ -699,6 +908,7 @@ function calRender() {
     btn.className = 'cal-day';
     if (isSel)        { btn.classList.add('selday'); }
     else if (isPast)  { btn.classList.add('past');   btn.disabled = true; btn.title = 'Past date'; }
+    else if (isBusy)  { btn.classList.add('busy');   btn.disabled = true; btn.title = 'Busy (admin reserved)'; }
     else if (isBooked){ btn.classList.add('taken');  btn.disabled = true; btn.title = 'Already booked — choose another day'; }
     else              { btn.classList.add('avail');  btn.onclick  = () => calPickDay(d, ds); }
     if (isToday)      { btn.classList.add('today-ring'); }
@@ -706,6 +916,8 @@ function calRender() {
     grid.appendChild(btn);
   }
 }
+
+ 
 
 function calPickDay(d, ds) {
   calSelDate = new Date(calYear, calMonth, d);
@@ -765,6 +977,48 @@ function calPickTime(val, label) {
   calRenderSlots(ds);
 }
 
+// ============ DETAIL SLIDESHOW ============
+let detailSlides = [];
+let detailIndex = 0;
+let detailTimer = null;
+
+function initDetailSlideshow(unitId){
+  const unit = units.find(u=>u.id===unitId) || {};
+  detailSlides = Array.isArray(unit.images) && unit.images.length ? unit.images : [
+    `https://picsum.photos/seed/${unitId}a/1200/720`,
+    `https://picsum.photos/seed/${unitId}b/1200/720`,
+    `https://picsum.photos/seed/${unitId}c/1200/720`
+  ];
+  detailIndex = 0;
+  const img = document.getElementById('detail-slide-img');
+  const dots = document.getElementById('detail-slide-dots');
+  if(!img) return;
+  img.src = detailSlides[detailIndex];
+  if(dots){ dots.innerHTML=''; detailSlides.forEach((s,i)=>{ const d=document.createElement('button'); d.className='w-2 h-2 rounded-full bg-white/70 border border-white/40'; d.onclick=()=>{ detailIndex=i; img.src=detailSlides[detailIndex]; updateDetailDots(); resetDetailAutoplay(); }; dots.appendChild(d); }); updateDetailDots(); }
+  resetDetailAutoplay();
+}
+
+function updateDetailDots(){ const dots = document.getElementById('detail-slide-dots'); if(!dots) return; Array.from(dots.children).forEach((d,idx)=> d.style.opacity = idx===detailIndex?'1':'0.6'); }
+function detailNext(){ if(!detailSlides.length) return; detailIndex=(detailIndex+1)%detailSlides.length; const img=document.getElementById('detail-slide-img'); if(img) img.src=detailSlides[detailIndex]; updateDetailDots(); resetDetailAutoplay(); }
+function detailPrev(){ if(!detailSlides.length) return; detailIndex=(detailIndex-1+detailSlides.length)%detailSlides.length; const img=document.getElementById('detail-slide-img'); if(img) img.src=detailSlides[detailIndex]; updateDetailDots(); resetDetailAutoplay(); }
+function resetDetailAutoplay(){ if(detailTimer) clearTimeout(detailTimer); detailTimer = setTimeout(()=> detailNext(), 4000); }
+
+function initDetailVideo(unitId){
+  const unit = units.find(u=>u.id===unitId) || {};
+  const vid = document.getElementById('detail-preview-video');
+  const src = document.getElementById('detail-preview-src');
+  if(!vid || !src) return;
+  if (unit.video) {
+    src.src = unit.video;
+    vid.load();
+    vid.classList.remove('hidden');
+  } else {
+    src.src = '';
+    try{ vid.pause(); }catch(e){}
+    vid.classList.add('hidden');
+  }
+}
+
 function calClearSel() {
   calSelDate = null; calSelTime = null;
   document.getElementById('bk-datetime').value = '';
@@ -775,9 +1029,96 @@ function calClearSel() {
 function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } calRender(); }
 function calNext() { calMonth++; if (calMonth > 11){ calMonth = 0;  calYear++; } calRender(); }
 
+// ============ VISITOR INFO HELPERS ============
+function promptVisitorInfoAndGo() {
+  console.log('promptVisitorInfoAndGo called', window.visitor);
+  try {
+    if (window.visitor && window.visitor.name && window.visitor.email && window.visitor.phone) {
+      console.log('visitor already provided — navigating to units');
+      navigateTo('units');
+      return;
+    }
+    const modal = document.getElementById('visitor-info-modal');
+    console.log('visitor modal element:', modal);
+    if (!modal) { console.warn('visitor modal not found — falling back to units'); navigateTo('units'); return; }
+    // prefill fields if any saved
+    if (window.visitor) {
+      const vn = document.getElementById('v-name'); if (vn) vn.value = window.visitor.name || '';
+      const ve = document.getElementById('v-email'); if (ve) ve.value = window.visitor.email || '';
+      const vp = document.getElementById('v-phone'); if (vp) vp.value = window.visitor.phone || '';
+    }
+    // show modal (Tailwind 'hidden' toggle + explicit style fallback)
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    modal.style.opacity = '1';
+    try { modal.style.zIndex = '99999'; } catch(e){}
+    modal.setAttribute('aria-hidden','false');
+    // focus first input slightly deferred
+    const first = document.getElementById('v-name'); if (first) setTimeout(()=>first.focus(), 60);
+  } catch (err) { console.error(err); navigateTo('units'); }
+}
+function closeVisitorModal() {
+  const modal = document.getElementById('visitor-info-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  try {
+    modal.style.display = 'none';
+    modal.style.opacity = '0';
+    modal.setAttribute('aria-hidden', 'true');
+  } catch (e) { console.error('closeVisitorModal error', e); }
+}
+// skipVisitorInfo removed — closing handled by Continue/X which call closeVisitorModal()/saveVisitorInfo
+function saveVisitorInfo(e) {
+  e.preventDefault();
+  const n = document.getElementById('v-name').value.trim();
+  const em = document.getElementById('v-email').value.trim();
+  const p = document.getElementById('v-phone').value.trim();
+  console.log('saveVisitorInfo called', { name: n, email: em, phone: p });
+  window.visitor = { name:n, email:em, phone:p };
+  console.log('visitor saved', window.visitor);
+  closeVisitorModal();
+  // If a booking was pending, open it now using saved visitor info
+  if (window._pendingBookingUnitId) {
+    const pending = window._pendingBookingUnitId; window._pendingBookingUnitId = null;
+    setTimeout(()=> openBooking(pending), 80);
+    return;
+  }
+  navigateTo('units');
+}
+
+// Visitor banner functions (units page)
+function showVisitorBanner() {
+  const b = document.getElementById('visitor-banner');
+  if (!b) return;
+  const vn = document.getElementById('vb-name'), ve = document.getElementById('vb-email'), vp = document.getElementById('vb-phone');
+  if (vn) vn.value = (window.visitor && window.visitor.name) ? window.visitor.name : '';
+  if (ve) ve.value = (window.visitor && window.visitor.email) ? window.visitor.email : '';
+  if (vp) vp.value = (window.visitor && window.visitor.phone) ? window.visitor.phone : '';
+  b.classList.remove('hidden');
+}
+function hideVisitorBanner() {
+  const b = document.getElementById('visitor-banner'); if (!b) return; b.classList.add('hidden');
+}
+function saveVisitorFromBanner() {
+  const vn = document.getElementById('vb-name'), ve = document.getElementById('vb-email'), vp = document.getElementById('vb-phone');
+  const n = vn ? vn.value.trim() : '';
+  const em = ve ? ve.value.trim() : '';
+  const p = vp ? vp.value.trim() : '';
+  if (!n || !em || !p) { alert('Please fill name, email, and phone.'); return; }
+  window.visitor = { name: n, email: em, phone: p };
+  console.log('visitor saved from banner', window.visitor);
+  hideVisitorBanner();
+}
+
 // ============ BOOKING MODAL ============
 function openBooking(unitId) {
-  ['bk-name','bk-email','bk-phone','bk-msg','bk-datetime'].forEach(id => document.getElementById(id).value = '');
+  console.log('openBooking called', unitId);
+  // Prefill contact fields from visitor if available; clear message & datetime
+  document.getElementById('bk-name').value  = (window.visitor && window.visitor.name) ? window.visitor.name : '';
+  document.getElementById('bk-email').value = (window.visitor && window.visitor.email) ? window.visitor.email : '';
+  document.getElementById('bk-phone').value = (window.visitor && window.visitor.phone) ? window.visitor.phone : '';
+  document.getElementById('bk-msg').value = '';
+  document.getElementById('bk-datetime').value = '';
   document.getElementById('bk-unit-id').value = unitId;
   document.getElementById('booking-success').classList.add('hidden');
   document.getElementById('booking-submit-btn').classList.remove('hidden');
@@ -861,14 +1202,18 @@ function renderGuestBookings() {
         <span class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${sc}">${b.status}</span>
       </div>
       <div class="space-y-1 mb-3 text-sm text-navy/70">
-        <div>📧 ${b.email}</div>
-        <div>📞 ${b.phone}</div>
-        <div>📅 ${b.dateStr} at ${b.timeStr}</div>
-        ${b.message?`<div>💬 ${b.message}</div>`:''}
+        <div><i class="fas fa-envelope text-xs mr-2"></i> ${b.email}</div>
+        <div><i class="fas fa-phone text-xs mr-2"></i> ${b.phone}</div>
+        <div><i class="fas fa-calendar-alt text-xs mr-2"></i> ${b.dateStr} at ${b.timeStr}</div>
+        ${b.message?`<div><i class="fas fa-comment text-xs mr-2"></i> ${b.message}</div>`:''}
       </div>
       <div class="flex gap-2">
-        <button onclick="editBooking('${b.id}')" class="px-4 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors text-sm font-medium btn-press">Edit</button>
-        <button onclick="deleteBooking('${b.id}')" class="px-4 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors text-sm font-medium btn-press">Cancel</button>
+        ${b.status === 'Declined' ? `
+          <button onclick="deleteBooking('${b.id}')" class="px-4 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors text-sm font-medium btn-press">Delete</button>
+        ` : `
+          <button onclick="editBooking('${b.id}')" class="px-4 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors text-sm font-medium btn-press">Edit</button>
+          <button onclick="deleteBooking('${b.id}')" class="px-4 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors text-sm font-medium btn-press">Cancel</button>
+        `}
       </div>`;
     cont.appendChild(div);
   });
@@ -903,15 +1248,21 @@ function editBooking(id) {
 
 function deleteBooking(id) {
   const idx = bookings.findIndex(x => x.id === id);
-  if (idx >= 0) { bookings.splice(idx,1); renderGuestBookings(); }
+  if (idx >= 0) {
+    bookings.splice(idx,1);
+    renderGuestBookings();
+    // update admin views
+    try { renderABookings(); renderAUnits(); renderAO(); } catch(e){}
+  }
 }
+
 
 // ============ CHATBOT ============
 function toggleChat() {
   chatOpen = !chatOpen;
   document.getElementById('chat-panel').classList.toggle('hidden', !chatOpen);
   if (chatOpen && !document.getElementById('chat-messages').children.length) {
-    addBot("Hi! 👋 I'm your UnityRent assistant. How can I help you find a condo?");
+    addBot("Hi! I'm your UnityRent assistant. How can I help you find a condo?");
     addBot("Try:\n• \"Studios under ₱20k\"\n• \"Units with a pool\"\n• \"2 bedroom condos\"");
   }
 }
@@ -971,8 +1322,8 @@ function processChat(msg) {
       mu=mu.filter(u=>u.amenities.includes(cap)); resp=resp||`Units with ${cap}:`;
     }
   });
-  if (!resp) { addBot("I can help! Try:\n\n🏷️ \"Studios under 20k\"\n🏊 \"Units with a pool\"\n🛏️ \"2 bedroom condos\"\n💰 \"Premium units\""); return; }
-  mu.length ? addBot(resp, mu) : addBot("No units match that. Try broadening your search 🔍");
+  if (!resp) { addBot("I can help! Try:\n\n\"Studios under 20k\"\n\"Units with a pool\"\n\"2 bedroom condos\"\n\"Premium units\""); return; }
+  mu.length ? addBot(resp, mu) : addBot("No units match that. Try broadening your search.");
 }
 
 // ============ ADMIN ============
@@ -1019,7 +1370,27 @@ function renderAO() {
 
 function renderAUnits() {
   const cont = document.getElementById('admin-units-list'); cont.innerHTML = '';
-  units.forEach(u => {
+  const q = adminUnitSearch && adminUnitSearch.trim() ? adminUnitSearch.trim().toLowerCase() : '';
+  const list = q ? units.filter(u => (`${u.name} ${u.description} ${u.amenities.join(' ')} ${u.beds} ${u.floor}`).toLowerCase().includes(q)) : units;
+  // apply adminFilters: status, beds, occupancy
+  const filtered = list.filter(u => {
+    if (adminFilters.status && adminFilters.status !== 'all') {
+      if (adminFilters.status === 'active' && u.status !== 'active') return false;
+      if (adminFilters.status === 'draft' && u.status === 'active') return false;
+    }
+    if (adminFilters.beds && adminFilters.beds !== 'all') {
+      if (adminFilters.beds === 'studio' && u.beds !== 'Studio') return false;
+      if (adminFilters.beds === '1' && u.beds !== '1 BR') return false;
+      if (adminFilters.beds === '2' && u.beds !== '2 BR') return false;
+    }
+    if (adminFilters.occupancy && adminFilters.occupancy !== 'all') {
+      const occ = tenants.filter(t => t.unit === u.name).length > 0;
+      if (adminFilters.occupancy === 'occupied' && !occ) return false;
+      if (adminFilters.occupancy === 'vacant' && occ) return false;
+    }
+    return true;
+  });
+  filtered.forEach(u => {
     const item = document.createElement('div');
     item.className = 'bg-white rounded-xl p-4 border border-warm flex flex-col gap-3';
 
@@ -1028,7 +1399,7 @@ function renderAUnits() {
     header.onclick = () => toggleUnitTenants(u.id);
     header.innerHTML = `
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:${u.color}20">${u.beds==='Studio'?'🏙️':u.beds==='1 BR'?'🏠':'🏡'}</div>
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:${u.color}20"><i class="fas fa-bed"></i></div>
         <div>
           <div class="text-sm font-semibold">${u.name}</div>
           <div class="text-xs text-navy/50">${u.beds} · ${u.sqm}sqm · ₱${u.price.toLocaleString()}/mo</div>
@@ -1068,10 +1439,13 @@ function toggleUnitTenants(id) {
   const unit = units.find(u=>u.id===id);
   if (!unit) return;
   const matched = tenants.map((tt, idx) => ({t: tt, idx})).filter(x => x.t.unit === unit.name);
+  const unitBookings = bookings.filter(b => b.unitName === unit.name);
+
+  let html = '';
   if (!matched.length) {
-    panel.innerHTML = `<div class="p-4 text-navy/50">No tenants currently assigned to this unit.</div>`;
+    html += `<div class="p-4 text-navy/50">No tenants currently assigned to this unit.</div>`;
   } else {
-    panel.innerHTML = matched.map(obj => {
+    html += matched.map(obj => {
       const t = obj.t; const idx = obj.idx;
       const payClass = t.paid ? 'bg-sage/10 text-sage' : 'bg-red-100 text-red-800';
       const payLabel = t.paid ? 'Paid' : 'Overdue';
@@ -1090,11 +1464,49 @@ function toggleUnitTenants(id) {
       </div>`;
     }).join('');
   }
+
+  // Bookings list for this unit
+  html += '<div class="mt-4">';
+  html += '<div class="text-sm font-semibold mb-2">Viewing Requests</div>';
+  if (!unitBookings.length) {
+    html += '<div class="text-sm text-navy/50">No viewing requests for this unit.</div>';
+  } else {
+    html += unitBookings.map(b => {
+      const sc = b.status==='Pending'?'bg-yellow-100 text-yellow-800':b.status==='Confirmed'?'bg-sage/10 text-sage':'bg-red-100 text-red-800';
+      return `
+      <div class="tenant-entry flex items-center justify-between">
+        <div>
+          <div class="text-sm font-semibold">${b.name} <span class="text-xs text-navy/40">· ${b.dateStr} ${b.timeStr}</span></div>
+          <div class="text-xs text-navy/50">${b.email} · ${b.phone}</div>
+          ${b.message?`<div class="text-xs text-navy/40 mt-1">${b.message}</div>`:''}
+        </div>
+        <div class="flex flex-col items-end gap-2">
+          <span class="px-3 py-1 rounded-full text-xs font-semibold ${sc}">${b.status}</span>
+          <div class="flex gap-2">
+            ${b.status === 'Pending' ? `
+              <button onclick="updBS('${b.id}','Confirmed')" class="px-2 py-1 rounded-full text-xs bg-sage text-cream btn-press">✓ Confirm</button>
+              <button onclick="updBS('${b.id}','Declined')" class="px-2 py-1 rounded-full text-xs bg-warm btn-press">✕ Decline</button>
+            ` : `<button onclick="deleteBooking('${b.id}')" class="px-2 py-1 rounded-full text-xs bg-red-50 text-red-600 btn-press">Delete</button>`}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  html += '</div>';
+
+  panel.innerHTML = html;
   // allow browser to render then set maxHeight to scrollHeight
   requestAnimationFrame(()=>{
     panel.style.maxHeight = panel.scrollHeight + 'px';
   });
 }
+function setAdminUnitSearch(val){ adminUnitSearch = val || ''; renderAUnits(); }
+function clearAdminUnitSearch(){ const el = document.getElementById('admin-unit-search'); if(el) el.value=''; setAdminUnitSearch(''); }
+function toggleAdminFilters(){ const p = document.getElementById('admin-manage-filters'); const btn = document.getElementById('admin-filter-btn'); if(!p) return; const isHidden = p.classList.contains('hidden'); p.classList.toggle('hidden', !isHidden); if(btn) btn.classList.toggle('chip-active', !isHidden); }
+function setAdminFilter(type, val){ if(!adminFilters) adminFilters = { status:'all', beds:'all', occupancy:'all' }; adminFilters[type] = val;
+  // update chips
+  document.querySelectorAll('.admin-filter-'+type).forEach(c => c.classList.toggle('chip-active', c.dataset.val === val));
+  renderAUnits(); }
 function toggleUS(id) {
   const u=units.find(x=>x.id===id);
   if(u){u.status=u.status==='active'?'draft':'active';renderAUnits();}
@@ -1189,7 +1601,7 @@ function renderABookings(){
     cont.appendChild(div);
   });
 }
-function updBS(id,status){ const b=bookings.find(x=>x.id===id); if(b){b.status=status;renderABookings();} }
+function updBS(id,status){ const b=bookings.find(x=>x.id===id); if(b){b.status=status; try{ renderABookings(); renderAUnits(); renderAO(); renderGuestBookings(); }catch(e){} } }
 
 function renderATenants(){
   const cont=document.getElementById('admin-tenants-list'); cont.innerHTML='';
@@ -1350,9 +1762,94 @@ function deleteTenant(id){
 }
 function confirmDeleteTenant(id){ if(tenants[id]) tenants.splice(id,1); renderATenants(); }
 
+// ============ BUSY DATES (ADMIN) ============
+
+function openBusyModal() {
+  document.getElementById('busy-modal-title').textContent = 'Manage Busy Schedule';
+  document.getElementById('busy-start').value = '';
+  document.getElementById('busy-end').value = '';
+  renderBusyList();
+  const modal = document.getElementById('busy-dates-modal'); if (modal) modal.classList.remove('hidden');
+}
+
+function closeBusyModal() {
+  const modal = document.getElementById('busy-dates-modal'); if (modal) modal.classList.add('hidden');
+}
+
+function renderBusyList() {
+  const listEl = document.getElementById('busy-dates-list'); if (!listEl) return;
+  const arr = Array.isArray(globalBusyDates) ? [...globalBusyDates].sort() : [];
+  if (!arr.length) { listEl.innerHTML = '<div class="text-navy/40">No busy dates set.</div>'; return; }
+  listEl.innerHTML = arr.map(ds => {
+    return `<div class="flex items-center justify-between gap-2"><div class="text-sm">${ds}</div><div class="flex gap-2"><button onclick="removeBusyDate('${ds}')" class="px-2 py-1 text-xs rounded-xl bg-red-50 text-red-600 btn-press">Remove</button></div></div>`;
+  }).join('');
+}
+
+function addBusyRange(e) {
+  e.preventDefault();
+  const s = document.getElementById('busy-start').value; const eDate = document.getElementById('busy-end').value;
+  if (!s || !eDate) { alert('Please select start and end dates.'); return; }
+  const start = new Date(s); const end = new Date(eDate); start.setHours(0,0,0,0); end.setHours(0,0,0,0);
+  if (end < start) { alert('End date must be same or after start date.'); return; }
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+    globalBusyDates.push(calDateStr(d.getFullYear(), d.getMonth(), d.getDate()));
+  }
+  globalBusyDates = Array.from(new Set(globalBusyDates));
+  saveBusyToStorage(); renderBusyList(); renderAUnits(); calRender();
+}
+
+function removeBusyDate(ds) {
+  const idx = globalBusyDates.indexOf(ds); if (idx >= 0) globalBusyDates.splice(idx,1);
+  saveBusyToStorage(); renderBusyList(); renderAUnits(); calRender();
+}
+
+function clearBusyDatesForCurrentUnit() {
+  if (!confirm('Clear all busy dates?')) return; globalBusyDates = []; saveBusyToStorage(); renderBusyList(); renderAUnits(); calRender();
+}
+
+function saveBusyToStorage() {
+  try {
+    const map = {};
+    units.forEach(u => { if (Array.isArray(u.busyDates) && u.busyDates.length) map[u.id] = u.busyDates; });
+    localStorage.setItem('unityrent_busyDates', JSON.stringify(map));
+    localStorage.setItem('unityrent_globalBusyDates', JSON.stringify(globalBusyDates || []));
+  } catch(e) { console.error('saveBusyToStorage error', e); }
+}
+
+function loadBusyFromStorage() {
+  try {
+    const raw = localStorage.getItem('unityrent_busyDates'); if (raw) {
+      const map = JSON.parse(raw); if (map && typeof map === 'object') {
+        Object.keys(map).forEach(uid => { const u = units.find(x => x.id === uid); if (u) u.busyDates = Array.isArray(map[uid]) ? map[uid] : []; });
+      }
+    }
+    const rawG = localStorage.getItem('unityrent_globalBusyDates'); if (rawG) {
+      const arr = JSON.parse(rawG); if (Array.isArray(arr)) globalBusyDates = arr;
+    }
+  } catch (e) { console.error('loadBusyFromStorage error', e); }
+}
+
 // ============ INIT ============
+loadBusyFromStorage();
 updateNavHL();
 lucide.createIcons();
+
+// Attach fallback event listener to hero browse button in case inline handler is ignored
+try{
+  const hb = document.getElementById('hero-browse-btn');
+  if (hb) {
+    hb.addEventListener('click', function (ev) { ev.preventDefault(); console.log('hero-browse-btn clicked (fallback)'); promptVisitorInfoAndGo(); });
+  }
+}catch(e){ console.error('hero button attach error', e); }
+
+// Ensure visitor modal is attached to document.body and has very high z-index
+try {
+  const vmodal = document.getElementById('visitor-info-modal');
+  if (vmodal) {
+    if (vmodal.parentElement !== document.body) document.body.appendChild(vmodal);
+    try { vmodal.style.zIndex = '9999999'; } catch(e){}
+  }
+} catch (e) { console.error('move visitor modal error', e); }
 </script>
 </body>
 </html>
