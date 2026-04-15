@@ -95,13 +95,17 @@
         <button onclick="toggleChat()" class="px-3 md:px-4 py-2 rounded-xl text-sm font-semibold bg-navy text-cream hover:bg-opacity-90 transition-colors btn-press flex items-center gap-1 shadow-md">
           <i class="fas fa-comments text-xs"></i> <span class="hidden sm:inline">Ask AI</span><span class="sm:hidden">AI</span>
         </button>
+        <button onclick="openTenantLogin()" class="px-3 py-2 rounded-xl text-sm font-semibold bg-cream border-2 border-navy text-navy hover:bg-navy/5 transition-colors btn-press">Login as Tenant</button>
       </div>
     </nav>
 
     <!-- HOME -->
     <div id="view-home" class="fade-in">
-      <section class="px-4 md:px-6 py-12 md:py-24 max-w-5xl mx-auto text-center">
-        <h1 id="hero-headline" class="font-display text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-5">Find Your Perfect Condo</h1>
+    
+
+  
+      <section class="px-4 md:px-6 py-16 text-center max-w-3xl mx-auto">
+        <h1 class="font-display text-3xl md:text-4xl font-bold mb-4">Find your next home</h1>
         <p id="hero-subtext" class="text-lg sm:text-xl text-navy/60 max-w-2xl mx-auto mb-8">Browse premium condominiums with transparent pricing, verified amenities, and instant viewing requests.</p>
         <button id="hero-browse-btn" onclick="promptVisitorInfoAndGo()" class="px-8 py-4 bg-accent text-cream text-xl font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all btn-press">Browse Available Units</button>
       </section>
@@ -222,6 +226,105 @@
   </div>
 
   <!-- ====== ADMIN DASHBOARD ====== -->
+  
+  <!-- ====== TENANT LOGIN & DASHBOARD ====== -->
+  <div id="tenant-login-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+    <div class="bg-white rounded-3xl shadow-xl border border-warm p-8 md:p-10 w-full max-w-md fade-in">
+      <h2 class="font-display text-2xl font-bold mb-2 text-center">Tenant Login</h2>
+      <p class="text-navy/50 text-base text-center mb-6">Enter your registered email to view lease and payments.</p>
+      <form onsubmit="handleTenantLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Email</label>
+          <input id="tenant-email" type="email" required class="w-full px-4 py-3 rounded-xl border-2 border-warm text-base focus:border-navy focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Password</label>
+          <input id="tenant-password" type="password" class="w-full px-4 py-3 rounded-xl border-2 border-warm text-base focus:border-navy focus:outline-none">
+        </div>
+        <div class="flex items-center justify-between">
+          <div id="tenant-login-error" class="hidden text-accent text-sm font-medium"></div>
+          <button type="button" onclick="sendTenantVerification(document.getElementById('tenant-email').value||'')" class="text-sm text-navy/60 hover:text-navy">Forgot password / Verify</button>
+        </div>
+        <button type="submit" class="w-full px-4 py-3 bg-sage text-cream rounded-xl text-base font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-lg">Sign In</button>
+        <button type="button" onclick="closeTenantLogin()" class="w-full py-2 text-sm text-navy/60 hover:text-navy transition-colors text-center">← Back to Public Site</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====== TENANT VERIFICATION / RESET MODAL (demo) ====== -->
+  <div id="tenant-verify-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+    <div class="bg-white rounded-3xl shadow-xl border border-warm p-6 w-full max-w-md">
+      <h3 class="font-display text-xl font-bold mb-2">Email Verification</h3>
+      <p class="text-sm text-navy/60 mb-4">Enter the 6-digit code sent to <span id="verify-email-display" class="font-medium"></span>, then set a new password.</p>
+      <form onsubmit="handleTenantVerifySubmit(event)" class="space-y-3">
+        <div>
+          <label class="block text-sm font-medium mb-1">Verification Code</label>
+          <input id="tenant-verify-code" type="text" maxlength="6" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">New Password</label>
+          <input id="tenant-verify-newpw" type="password" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none">
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" class="flex-1 px-4 py-2 bg-sage text-cream rounded-xl btn-press">Set Password</button>
+          <button type="button" onclick="closeTenantVerifyModal()" class="px-4 py-2 bg-warm rounded-xl btn-press">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="tenant-dashboard" class="hidden min-h-screen flex flex-col md:flex-row">
+    <aside class="w-full md:w-60 bg-navy text-cream flex flex-col flex-shrink-0">
+      <div class="px-5 py-5 border-b border-white/10">
+        <div class="font-display text-xl font-bold">UnityRent</div>
+        <div class="text-cream/50 text-xs mt-1">Tenant Portal</div>
+      </div>
+      <nav class="flex md:flex-col flex-row overflow-x-auto p-2 md:p-3 gap-1">
+        <button onclick="showTenantDashboard()" class="tenant-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-tenant-nav="home"><i class="fas fa-home text-xs w-4"></i> Home</button>
+      </nav>
+      <div class="p-2 md:p-3 border-t border-white/10 mt-auto">
+        <button onclick="tenantLogout()" class="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left text-cream/70">
+          <i class="fas fa-sign-out-alt text-xs"></i> Sign Out
+        </button>
+      </div>
+    </aside>
+    <main class="flex-1 overflow-auto bg-cream p-6">
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-white rounded-3xl shadow-xl border border-warm p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+                  <div class="text-2xl font-display font-bold" id="td-name">Tenant Name</div>
+                  <div class="text-sm text-navy/50" id="td-unit">Unit</div>
+                  <div class="mt-2" id="td-paid-indicator"></div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm text-navy/50">Status</div>
+              <div id="td-status" class="text-sm font-semibold text-sage">Active</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="bg-cream rounded-xl p-4">
+              <div class="text-xs text-navy/50 mb-1">Lease Period</div>
+              <div id="td-lease" class="font-semibold">—</div>
+              <div class="text-xs text-navy/40 mt-2">Last Paid: <span id="td-lastpaid">—</span></div>
+            </div>
+            <div class="bg-cream rounded-xl p-4">
+              <div class="text-xs text-navy/50 mb-1">Next Payment Due</div>
+              <div id="td-nextdue" class="font-semibold text-accent">—</div>
+              <div class="mt-3">
+                  <button id="td-paynow" onclick="tenantPayNow()" class="px-4 py-2 bg-accent text-cream rounded-xl font-semibold btn-press">Pay Now</button>
+                </div>
+            </div>
+          </div>
+          <div id="td-additional" class="text-sm text-navy/60">Contact: <span id="td-contact">—</span></div>
+        </div>
+        <div class="mt-6">
+          <h4 class="text-sm font-semibold mb-2">Recent Payments</h4>
+          <div id="td-recent-payments" class="space-y-2 text-sm text-navy/60">No recent payments.</div>
+        </div>
+      </div>
+    </main>
+  </div>
   <div id="admin-dashboard" class="hidden min-h-screen flex flex-col md:flex-row">
     <aside class="w-full md:w-60 bg-navy text-cream flex flex-col flex-shrink-0">
       <div class="px-5 py-5 border-b border-white/10">
@@ -251,52 +354,13 @@
         </div>
         <h3 class="font-display text-lg font-bold mb-3">Recent Requests</h3>
         <div id="admin-recent-bookings" class="space-y-3"></div>
+        <h3 class="font-display text-lg font-bold mb-3 mt-6">Recent Payments</h3>
+        <div id="admin-recent-payments" class="space-y-3"></div>
       </div>
       <div id="admin-manage" class="p-5 md:p-8 fade-in hidden">
         <div class="flex items-center justify-between mb-7 flex-wrap gap-3">
           <h2 class="font-display text-2xl md:text-3xl font-bold">Manage Units</h2>
-          <div class="flex items-center gap-2">
-            <div class="relative">
-              <input id="admin-unit-search" type="text" placeholder="Search units by name or amenity" oninput="setAdminUnitSearch(this.value)" class="px-3 py-2 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none w-56" />
-              <button type="button" onclick="clearAdminUnitSearch()" title="Clear" class="absolute right-1 top-1/2 -translate-y-1/2 text-navy/40 hover:text-navy px-2">✕</button>
-            </div>
-            <button id="admin-filter-btn" onclick="toggleAdminFilters()" class="px-3 py-2 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press" title="Show filters">
-              <i class="fas fa-filter text-sm"></i>
-            </button>
-            <div class="flex items-center gap-2">
-              <button onclick="openBusyModal()" class="px-4 py-2.5 bg-yellow-50 text-yellow-700 rounded-xl text-sm font-semibold hover:bg-yellow-100 transition-colors btn-press shadow-md flex items-center gap-2"><i class="fas fa-calendar-day text-xs"></i> Busy Schedule</button>
-              <button onclick="openUnitEditor()" class="px-5 py-2.5 bg-sage text-cream rounded-xl text-sm font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-md flex items-center gap-2"><i class="fas fa-plus text-xs"></i> Add Unit</button>
-            </div>
-          </div>
-        </div>
-        <div id="admin-manage-filters" class="hidden mb-4">
-          <div class="flex items-center gap-4 flex-wrap">
-            <div>
-              <div class="text-sm font-semibold mb-2">Status</div>
-              <div class="flex gap-2">
-                <button data-val="all" onclick="setAdminFilter('status','all')" class="admin-filter-status px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press chip-active">All</button>
-                <button data-val="active" onclick="setAdminFilter('status','active')" class="admin-filter-status px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">Active</button>
-                <button data-val="draft" onclick="setAdminFilter('status','draft')" class="admin-filter-status px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">Draft</button>
-              </div>
-            </div>
-            <div>
-              <div class="text-sm font-semibold mb-2">Unit Type</div>
-              <div class="flex gap-2">
-                <button data-val="all" onclick="setAdminFilter('beds','all')" class="admin-filter-beds px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press chip-active">All</button>
-                <button data-val="studio" onclick="setAdminFilter('beds','studio')" class="admin-filter-beds px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">Studio</button>
-                <button data-val="1" onclick="setAdminFilter('beds','1')" class="admin-filter-beds px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">1 BR</button>
-                <button data-val="2" onclick="setAdminFilter('beds','2')" class="admin-filter-beds px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">2 BR</button>
-              </div>
-            </div>
-            <div>
-              <div class="text-sm font-semibold mb-2">Occupancy</div>
-              <div class="flex gap-2">
-                <button data-val="all" onclick="setAdminFilter('occupancy','all')" class="admin-filter-occupancy px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press chip-active">All</button>
-                <button data-val="occupied" onclick="setAdminFilter('occupancy','occupied')" class="admin-filter-occupancy px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">Occupied</button>
-                <button data-val="vacant" onclick="setAdminFilter('occupancy','vacant')" class="admin-filter-occupancy px-3 py-1.5 rounded-full text-sm font-medium border-2 border-navy/20 btn-press">Vacant</button>
-              </div>
-            </div>
-          </div>
+          <button onclick="openUnitEditor()" class="px-5 py-2.5 bg-sage text-cream rounded-xl text-sm font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-md flex items-center gap-2"><i class="fas fa-plus text-xs"></i> Add Unit</button>
         </div>
         <div id="admin-units-list" class="space-y-3"></div>
       </div>
@@ -414,6 +478,11 @@
         <div><label class="block text-sm font-medium mb-1.5">Email</label><input id="te-email" type="email" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="maria@email.com"></div>
         <div><label class="block text-sm font-medium mb-1.5">Phone</label><input id="te-phone" type="tel" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="0917-555-1234"></div>
         <div>
+          <label class="block text-sm font-medium mb-1.5">Password (optional)</label>
+          <input id="te-password" type="password" placeholder="Set tenant password" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none">
+          <div class="text-xs text-navy/50 mt-1">If set, tenant can login with email + password. Leave blank to require verification before creating a password.</div>
+        </div>
+        <div>
           <label class="block text-sm font-medium mb-1.5">Assigned Unit</label>
           <select id="te-unit" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"><option value="">Select a unit…</option></select>
         </div>
@@ -428,6 +497,13 @@
           <div>
             <label class="block text-sm font-medium mb-1.5">Last Paid</label>
             <input id="te-lastpaid" type="date" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-3">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Due Date</label>
+            <input id="te-due-date" type="date" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" />
+            <div class="text-xs text-navy/50 mt-1">Set the payment due date for this tenant (landlord defined). If unpaid by this date, status becomes Overdue.</div>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -555,6 +631,34 @@
   </div>
 
 </div>
+<!-- ====== PAYMENT MODAL (GCash only demo) ====== -->
+<div id="payment-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+  <div class="bg-white rounded-3xl shadow-xl border border-warm p-6 w-full max-w-md">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-display text-xl font-bold">Pay Rent (GCash)</h3>
+      <button onclick="closePaymentModal()" class="p-2 hover:bg-warm rounded-xl transition-colors"><i class="fas fa-times text-sm"></i></button>
+    </div>
+    <div class="text-sm text-navy/60 mb-4">Payment method:
+      <select id="pay-method-select" class="ml-2 px-3 py-1 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none">
+        <option value="GCash">GCash</option>
+      </select>
+      <span class="ml-2">— tax applies.</span>
+    </div>
+    <div class="bg-cream rounded-xl p-4 mb-4">
+      <div class="text-sm text-navy/50">Tenant</div>
+      <div id="pay-tenant-name" class="font-semibold">Name</div>
+      <div id="pay-tenant-unit" class="text-xs text-navy/50">Unit</div>
+      <div class="mt-3 text-sm text-navy/50">Amount: <span id="pay-amount">₱0</span></div>
+      <div class="text-sm text-navy/50">Tax: <span id="pay-tax">₱0 (6%)</span></div>
+      <div class="text-lg font-semibold mt-2">Total: <span id="pay-total">₱0</span></div>
+    </div>
+    <div class="flex gap-2">
+      <button id="pay-confirm-btn" onclick="confirmPayment()" data-amount="0" data-tax="0" data-total="0" class="flex-1 px-4 py-2 bg-accent text-cream rounded-xl btn-press">Pay with GCash</button>
+      <button onclick="closePaymentModal()" class="px-4 py-2 bg-warm rounded-xl btn-press">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ====== SCRIPTS ====== -->
 <script>
 // ============ DATA ============
@@ -608,16 +712,17 @@ const bookings = [
     status: 'Declined'
   }
 ];
+const recentPayments = []; // { name, unit, amount, tax, total, date }
 const tenants  = [
-  { name:'Maria Santos', unit:'Horizon 1-Bedroom', leaseStart:'2024-06-01', leaseEnd:'2025-05-31', status:'Active',   email:'maria@email.com', phone:'0917-555-1234', paid:true,  lastPaid:'2024-12-01' },
-  { name:'James Reyes',  unit:'Garden Suite 2BR',  leaseStart:'2024-09-15', leaseEnd:'2025-09-14', status:'Active',   email:'james@email.com', phone:'0918-555-5678', paid:false, lastPaid:'' },
-  { name:'Anna Cruz',    unit:'Skyline Studio A',  leaseStart:'2024-01-01', leaseEnd:'2024-12-31', status:'Expiring', email:'anna@email.com',  phone:'0919-555-9012', paid:false, lastPaid:'' },
-  { name:'Carl Tan',     unit:'Bayview 1-BR',      leaseStart:'2025-01-01', leaseEnd:'2025-12-31', status:'Active',   email:'carl@email.com',   phone:'0920-555-1111', paid:true,  lastPaid:'2025-03-01' },
-  { name:'Liza Moreno',  unit:'Riverside 2BR',     leaseStart:'2024-11-01', leaseEnd:'2025-10-31', status:'Active',   email:'liza@email.com',   phone:'0921-555-2222', paid:false, lastPaid:'' },
-  { name:'Ken Villan',   unit:'Loft Central',      leaseStart:'2025-02-01', leaseEnd:'2026-01-31', status:'Active',   email:'ken@email.com',    phone:'0922-555-3333', paid:true,  lastPaid:'2025-02-20' },
-  { name:'May Lopez',    unit:'Campus Studio',     leaseStart:'2025-03-01', leaseEnd:'2026-02-28', status:'Active',   email:'may@email.com',    phone:'0923-555-4444', paid:false, lastPaid:'' },
-  { name:'Rico Dela',    unit:'Skyline Duplex',    leaseStart:'2024-12-01', leaseEnd:'2025-11-30', status:'Active',   email:'rico@email.com',   phone:'0924-555-5555', paid:true,  lastPaid:'2025-03-10' },
-  { name:'Ana Gutierrez',unit:'Penthouse Loft',   leaseStart:'2025-01-15', leaseEnd:'2026-01-14', status:'Active',   email:'ana@email.com',    phone:'0925-555-6666', paid:false, lastPaid:'' },
+  { name:'Maria Santos', unit:'Horizon 1-Bedroom', leaseStart:'2024-06-01', leaseEnd:'2025-05-31', status:'Active',   email:'maria@email.com', phone:'0917-555-1234', paid:true,  lastPaid:'2024-12-01', dueDate:'2026-04-16', password:'1234' },
+  { name:'James Reyes',  unit:'Garden Suite 2BR',  leaseStart:'2024-09-15', leaseEnd:'2025-09-14', status:'Active',   email:'james@email.com', phone:'0918-555-5678', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
+  { name:'Anna Cruz',    unit:'Skyline Studio A',  leaseStart:'2024-01-01', leaseEnd:'2024-12-31', status:'Expiring', email:'anna@email.com',  phone:'0919-555-9012', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
+  { name:'Carl Tan',     unit:'Bayview 1-BR',      leaseStart:'2025-01-01', leaseEnd:'2025-12-31', status:'Active',   email:'carl@email.com',   phone:'0920-555-1111', paid:true,  lastPaid:'2025-03-01', dueDate:'2026-04-16', password:'1234' },
+  { name:'Liza Moreno',  unit:'Riverside 2BR',     leaseStart:'2024-11-01', leaseEnd:'2025-10-31', status:'Active',   email:'liza@email.com',   phone:'0921-555-2222', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
+  { name:'Ken Villan',   unit:'Loft Central',      leaseStart:'2025-02-01', leaseEnd:'2026-01-31', status:'Active',   email:'ken@email.com',    phone:'0922-555-3333', paid:true,  lastPaid:'2025-02-20', dueDate:'2026-04-16', password:'1234' },
+  { name:'May Lopez',    unit:'Campus Studio',     leaseStart:'2025-03-01', leaseEnd:'2026-02-28', status:'Active',   email:'may@email.com',    phone:'0923-555-4444', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
+  { name:'Rico Dela',    unit:'Skyline Duplex',    leaseStart:'2024-12-01', leaseEnd:'2025-11-30', status:'Active',   email:'rico@email.com',   phone:'0924-555-5555', paid:true,  lastPaid:'2025-03-10', dueDate:'2026-04-16', password:'1234' },
+  { name:'Ana Gutierrez',unit:'Penthouse Loft',   leaseStart:'2025-01-15', leaseEnd:'2026-01-14', status:'Active',   email:'ana@email.com',    phone:'0925-555-6666', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
 ];
 
 // Visitor contact (persist while browsing)
@@ -782,6 +887,11 @@ function renderUnits() {
       </div>`;
     grid.appendChild(c);
   });
+}
+
+// Utility: small badge for paid/unpaid
+function paidBadge(paid){
+  return paid ? `<span class="px-2 py-1 rounded-full text-xs font-semibold bg-sage/10 text-sage">Paid</span>` : `<span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Overdue</span>`;
 }
 
 function showDetail(id) {
@@ -1366,6 +1476,17 @@ function renderAO() {
     div.innerHTML = `<div><div class="text-sm font-semibold">${b.name}</div><div class="text-xs text-navy/50">${b.unitName} · ${b.dateStr} ${b.timeStr}</div></div><span class="px-3 py-1 rounded-full text-xs font-medium ${sc}">${b.status}</span>`;
     cont.appendChild(div);
   });
+  // Recent payments
+  const pcont = document.getElementById('admin-recent-payments');
+  if (pcont) {
+    pcont.innerHTML = '';
+    if (!recentPayments.length) pcont.innerHTML = '<div class="text-navy/40 text-sm py-4 text-center">No recent payments.</div>';
+    recentPayments.slice().reverse().slice(0,5).forEach(r => {
+      const dv = document.createElement('div'); dv.className='bg-white rounded-xl p-4 border border-warm flex items-center justify-between';
+      dv.innerHTML = `<div><div class="text-sm font-semibold">${r.name}</div><div class="text-xs text-navy/50">${r.unit} · ${r.date}</div></div><div class="text-sm font-medium text-sage">₱${r.total.toLocaleString()}</div>`;
+      pcont.appendChild(dv);
+    });
+  }
 }
 
 function renderAUnits() {
@@ -1630,8 +1751,9 @@ function renderATenants(){
     const div=document.createElement('div');
     div.className='bg-white rounded-xl p-4 border border-warm flex items-center justify-between flex-wrap gap-3';
     const sc=t.status==='Active'?'bg-sage/10 text-sage':t.status==='Expiring'?'bg-yellow-100 text-yellow-800':'bg-navy/5 text-navy/40';
-    const payClass = t.paid ? 'bg-sage/10 text-sage' : 'bg-red-100 text-red-800';
-    const payLabel = t.paid ? 'Paid' : 'Overdue';
+    const pstate = getPaymentState(t);
+    const payClass = pstate === 'Paid' ? 'bg-sage/10 text-sage' : pstate === 'Overdue' ? 'bg-red-100 text-red-800' : 'bg-warm text-navy/70';
+    const payLabel = pstate === 'Paid' ? 'Paid' : pstate === 'Overdue' ? 'Overdue' : 'Unpaid';
     div.innerHTML=`
       <div>
         <div class="text-sm font-semibold">${t.name}</div>
@@ -1694,6 +1816,8 @@ function openTenantEditor(id){
     document.getElementById('te-status').value=t.status;
     document.getElementById('te-paid').checked = !!t.paid;
     document.getElementById('te-lastpaid').value = t.lastPaid || '';
+    document.getElementById('te-password').value = t.password || '';
+    document.getElementById('te-due-date').value = t.dueDate || '';
     document.getElementById('te-submit-btn').textContent='Update Tenant';
   } else {
     document.getElementById('tenant-editor-title').textContent='Add New Tenant';
@@ -1704,6 +1828,8 @@ function openTenantEditor(id){
     document.getElementById('te-id').value='';
     document.getElementById('te-status').value='Active';
     document.getElementById('te-submit-btn').textContent='Save Tenant';
+    document.getElementById('te-password').value = '';
+    document.getElementById('te-due-date').value = '';
   }
   updateTSChips();
 }
@@ -1725,7 +1851,9 @@ function saveTenant(e){
     leaseEnd:document.getElementById('te-lease-end').value,
     status:document.getElementById('te-status').value,
     paid: !!document.getElementById('te-paid').checked,
-    lastPaid: document.getElementById('te-lastpaid').value || ''
+    lastPaid: document.getElementById('te-lastpaid').value || '',
+    dueDate: document.getElementById('te-due-date') ? document.getElementById('te-due-date').value : '',
+    password: document.getElementById('te-password') ? document.getElementById('te-password').value : ''
   };
   // Prevent assigning when unit is full (account for edits)
   if (!data.unit) { alert('Please select a unit.'); return; }
@@ -1850,6 +1978,205 @@ try {
     try { vmodal.style.zIndex = '9999999'; } catch(e){}
   }
 } catch (e) { console.error('move visitor modal error', e); }
+
+// ============ TENANT LOGIN & DASHBOARD ============
+let currentTenantIndex = null;
+function openTenantLogin() {
+  const modal = document.getElementById('tenant-login-modal');
+  if (!modal) return;
+  document.getElementById('tenant-email').value='';
+  document.getElementById('tenant-password').value='';
+  document.getElementById('tenant-login-error').classList.add('hidden');
+  modal.classList.remove('hidden');
+  const e = document.getElementById('tenant-email'); if (e) setTimeout(()=>e.focus(),60);
+}
+function closeTenantLogin() { document.getElementById('tenant-login-modal').classList.add('hidden'); }
+function handleTenantLogin(e){
+  e.preventDefault();
+  const email = (document.getElementById('tenant-email').value||'').trim().toLowerCase();
+  const pw = (document.getElementById('tenant-password').value||'').trim();
+  const errEl = document.getElementById('tenant-login-error');
+  if(!email){ if(errEl){ errEl.textContent='Enter email.'; errEl.classList.remove('hidden'); } return; }
+  const idx = tenants.findIndex(t => (t.email||'').toLowerCase() === email);
+  if (idx === -1) { if(errEl){ errEl.textContent='Tenant not found. Please check your email.'; errEl.classList.remove('hidden'); } return; }
+  const tenant = tenants[idx];
+  // If tenant has a password set, require it
+  if (tenant.password && tenant.password.length) {
+    if (!pw) { if(errEl){ errEl.textContent='Enter password.'; errEl.classList.remove('hidden'); } return; }
+    if (pw !== tenant.password) { if(errEl){ errEl.textContent='Incorrect password.'; errEl.classList.remove('hidden'); } return; }
+    // success
+    currentTenantIndex = idx; if(errEl) errEl.classList.add('hidden'); closeTenantLogin(); showTenantDashboard(); return;
+  }
+  // No password set: ask user to verify via code first
+  if (!pw) {
+    if(errEl){ errEl.textContent='No password set. Click "Forgot password / Verify" to receive a verification code.'; errEl.classList.remove('hidden'); }
+    return;
+  }
+  // If user entered a pw but tenant has no password, require verification flow (prevent direct set without code)
+  if(errEl){ errEl.textContent='No password is registered. Use verification to set your password.'; errEl.classList.remove('hidden'); }
+}
+
+function showTenantDashboard(){
+  if (currentTenantIndex === null || !tenants[currentTenantIndex]) return;
+  const t = tenants[currentTenantIndex];
+  document.getElementById('td-name').textContent = t.name || 'Tenant';
+  document.getElementById('td-unit').textContent = t.unit || '—';
+  document.getElementById('td-status').textContent = t.status || '—';
+  document.getElementById('td-lease').textContent = (t.leaseStart||'—') + ' → ' + (t.leaseEnd||'—');
+  document.getElementById('td-lastpaid').textContent = t.lastPaid || '—';
+  document.getElementById('td-contact').textContent = (t.email||'') + (t.phone?(' · '+t.phone):'');
+  // show landlord-defined due date when present; otherwise compute next due naively
+  if (t.dueDate) {
+    document.getElementById('td-nextdue').textContent = t.dueDate;
+  } else {
+    let nextDue = '—';
+    try {
+      if (t.lastPaid) {
+        const d = new Date(t.lastPaid);
+        d.setMonth(d.getMonth()+1);
+        nextDue = formatDateISO(d);
+      } else {
+        const d = new Date(); d.setDate(d.getDate()); nextDue = formatDateISO(d);
+      }
+    } catch(e){ nextDue = '—'; }
+    document.getElementById('td-nextdue').textContent = nextDue;
+  }
+
+  // payment indicator based on due date and paid flag
+  const ind = document.getElementById('td-paid-indicator');
+  if (ind) {
+    const pstate = getPaymentState(t);
+    ind.innerHTML = paidStateBadge(pstate);
+  }
+  // recent payments (global)
+  renderTenantRecentPayments();
+
+  // show dashboard and hide public portal views
+  document.getElementById('tenant-dashboard').classList.remove('hidden');
+  document.getElementById('public-portal').classList.add('hidden');
+  document.getElementById('admin-login-view').classList.add('hidden');
+  document.getElementById('admin-dashboard').classList.add('hidden');
+}
+
+function tenantPayNow(){
+  // Open payment modal (only GCash supported). Prepare amounts.
+  if (currentTenantIndex === null) return;
+  const t = tenants[currentTenantIndex];
+  const unitObj = units.find(u => u.name === t.unit) || {};
+  const amount = unitObj.price || 0;
+  const TAX_RATE = 0.06;
+  const tax = Math.round(amount * TAX_RATE);
+  const total = amount + tax;
+  // set modal values
+  document.getElementById('pay-tenant-name').textContent = t.name || '';
+  document.getElementById('pay-tenant-unit').textContent = t.unit || '';
+  document.getElementById('pay-amount').textContent = `₱${amount.toLocaleString()}`;
+  document.getElementById('pay-tax').textContent = `₱${tax.toLocaleString()} (6%)`;
+  document.getElementById('pay-total').textContent = `₱${total.toLocaleString()}`;
+  const pmSelect = document.getElementById('pay-method-select');
+  if(pmSelect) pmSelect.value = 'GCash';
+  document.getElementById('pay-confirm-btn').dataset.amount = amount;
+  document.getElementById('pay-confirm-btn').dataset.tax = tax;
+  document.getElementById('pay-confirm-btn').dataset.total = total;
+  // update button label to include selected method
+  const methodLabel = pmSelect ? pmSelect.value : 'GCash';
+  document.getElementById('pay-confirm-btn').textContent = `Pay with ${methodLabel}`;
+  document.getElementById('payment-modal').classList.remove('hidden');
+}
+
+function tenantLogout(){ currentTenantIndex = null; document.getElementById('tenant-dashboard').classList.add('hidden'); document.getElementById('public-portal').classList.remove('hidden'); }
+
+function formatDateISO(d){ try { const dt = new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; } catch(e){ return '—'; } }
+
+// Payment state helper: returns 'Paid' | 'Unpaid' | 'Overdue'
+function getPaymentState(t){
+  if (!t) return 'Unpaid';
+  if (t.paid) return 'Paid';
+  if (!t.dueDate) return 'Unpaid';
+  try{
+    const today = new Date(); today.setHours(0,0,0,0);
+    const due = new Date(t.dueDate); due.setHours(0,0,0,0);
+    if (today.getTime() > due.getTime()) return 'Overdue';
+    return 'Unpaid';
+  }catch(e){ return 'Unpaid'; }
+}
+
+function paidStateBadge(state){
+  if(state === 'Paid') return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-sage/10 text-sage">Paid</span>';
+  if(state === 'Overdue') return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Overdue</span>';
+  return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-warm text-navy/70">Unpaid</span>';
+}
+
+// Verification helpers (demo - shows code in alert)
+window.tenantVerification = window.tenantVerification || {};
+function sendTenantVerification(email){
+  const em = (email||'').trim().toLowerCase();
+  if(!em){ alert('Enter an email first.'); return; }
+  const idx = tenants.findIndex(t => (t.email||'').toLowerCase()===em);
+  if(idx===-1){ alert('No tenant with that email.'); return; }
+  const code = String(Math.floor(100000 + Math.random()*900000));
+  window.tenantVerification[em] = { code, at: Date.now(), expires: Date.now()+5*60*1000 };
+  // In a real app send via email; here we show it for demo
+  alert('Verification code (demo): ' + code);
+  openTenantVerifyModal(em);
+}
+
+// ====== PAYMENT MODAL HANDLERS ======
+function closePaymentModal(){ document.getElementById('payment-modal').classList.add('hidden'); }
+function confirmPayment(){
+  if (currentTenantIndex === null) return; const t = tenants[currentTenantIndex];
+  const btn = document.getElementById('pay-confirm-btn'); if(!btn) return;
+  const amount = parseInt(btn.dataset.amount||0,10);
+  const tax = parseInt(btn.dataset.tax||0,10);
+  const total = parseInt(btn.dataset.total||0,10);
+  // simulate GCash success
+  if (!confirm(`Pay ${btn.dataset.total} via GCash now?`)) return;
+  const d = new Date(); const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  t.paid = true; t.lastPaid = iso;
+  // record recent payment
+  recentPayments.push({ name: t.name, unit: t.unit, amount, tax, total, date: iso });
+  // keep recentPayments length reasonable
+  if (recentPayments.length > 20) recentPayments.shift();
+  closePaymentModal();
+  showTenantDashboard(); renderATenants(); try{ renderABookings(); renderAUnits(); renderAO(); }catch(e){}
+  alert('Payment successful via GCash. Thank you!');
+}
+
+// render recent payments in tenant dashboard
+function renderTenantRecentPayments(){
+  const el = document.getElementById('td-recent-payments'); if(!el) return;
+  if(!recentPayments.length){ el.textContent = 'No recent payments.'; return; }
+  el.innerHTML = '';
+  recentPayments.slice().reverse().slice(0,5).forEach(r=>{
+    const d = document.createElement('div'); d.className='flex items-center justify-between';
+    d.innerHTML = `<div>${r.name} <span class="text-navy/40 text-xs">· ${r.unit}</span></div><div class="text-sm font-medium text-sage">₱${r.total.toLocaleString()}</div>`;
+    el.appendChild(d);
+  });
+}
+function openTenantVerifyModal(email){
+  document.getElementById('verify-email-display').textContent = email;
+  document.getElementById('tenant-verify-code').value = '';
+  document.getElementById('tenant-verify-newpw').value = '';
+  document.getElementById('tenant-verify-modal').classList.remove('hidden');
+}
+function closeTenantVerifyModal(){ document.getElementById('tenant-verify-modal').classList.add('hidden'); }
+function handleTenantVerifySubmit(e){
+  e.preventDefault();
+  const email = (document.getElementById('verify-email-display').textContent||'').trim().toLowerCase();
+  const code = (document.getElementById('tenant-verify-code').value||'').trim();
+  const newpw = (document.getElementById('tenant-verify-newpw').value||'').trim();
+  if(!email || !code || !newpw){ alert('Fill code and new password.'); return; }
+  const rec = window.tenantVerification[email];
+  if(!rec || rec.code !== code){ alert('Invalid or expired code.'); return; }
+  // set password for tenant
+  const idx = tenants.findIndex(t => (t.email||'').toLowerCase()===email);
+  if(idx===-1){ alert('Tenant not found.'); return; }
+  tenants[idx].password = newpw;
+  // clear verification
+  delete window.tenantVerification[email];
+  closeTenantVerifyModal();
+  alert('Password set. You can now login with your email and password.');
+}
 </script>
 </body>
 </html>
