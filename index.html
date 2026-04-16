@@ -171,6 +171,8 @@
       </section>
     </div>
 
+    
+
     <!-- CHATBOT -->
     <div id="chat-panel" class="fixed bottom-0 right-0 z-50 hidden" style="width:100%;max-width:400px;height:68%;max-height:100%">
       <div class="bg-white rounded-t-3xl shadow-2xl border border-warm flex flex-col h-full">
@@ -199,14 +201,14 @@
     </div>
 
     <footer class="px-6 py-8 text-center border-t border-warm mt-12">
-      <p class="text-navy/40 text-sm">© 2025 UnityRent. <button onclick="navigateTo('admin-login')" class="underline hover:text-navy/60 transition-colors">Owner Portal</button></p>
+      <p class="text-navy/40 text-sm">© 2025 UnityRent. <button onclick="navigateTo('admin-login')" class="underline hover:text-navy/60 transition-colors">Admin Portal</button></p>
     </footer>
   </div>
 
   <!-- ====== ADMIN LOGIN ====== -->
   <div id="admin-login-view" class="hidden min-h-screen flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl shadow-xl border border-warm p-8 md:p-10 w-full max-w-md fade-in">
-      <h2 class="font-display text-3xl font-bold mb-2 text-center">Owner Portal</h2>
+      <h2 class="font-display text-3xl font-bold mb-2 text-center">Admin Portal</h2>
       <p class="text-navy/50 text-base text-center mb-8">Access your property dashboard</p>
       <form onsubmit="handleAdminLogin(event)" class="space-y-5">
         <div>
@@ -235,7 +237,9 @@
       <form onsubmit="handleTenantLogin(event)" class="space-y-4">
         <div>
           <label class="block text-sm font-medium mb-2">Email</label>
-          <input id="tenant-email" type="email" required class="w-full px-4 py-3 rounded-xl border-2 border-warm text-base focus:border-navy focus:outline-none">
+          <div class="flex items-center gap-2">
+            <input id="tenant-email" type="email" required class="flex-1 px-4 py-3 rounded-xl border-2 border-warm text-base focus:border-navy focus:outline-none">
+          </div>
         </div>
         <div>
           <label class="block text-sm font-medium mb-2">Password</label>
@@ -245,7 +249,7 @@
           <div id="tenant-login-error" class="hidden text-accent text-sm font-medium"></div>
           <button type="button" onclick="sendTenantVerification(document.getElementById('tenant-email').value||'')" class="text-sm text-navy/60 hover:text-navy">Forgot password / Verify</button>
         </div>
-        <button type="submit" class="w-full px-4 py-3 bg-sage text-cream rounded-xl text-base font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-lg">Sign In</button>
+        <button type="submit" class="w-full px-4 py-3 bg-sage text-cream rounded-xl text-base font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-lg">Continue</button>
         <button type="button" onclick="closeTenantLogin()" class="w-full py-2 text-sm text-navy/60 hover:text-navy transition-colors text-center">← Back to Public Site</button>
       </form>
     </div>
@@ -273,6 +277,24 @@
     </div>
   </div>
 
+  <!-- ====== TENANT LOGIN CODE VERIFY MODAL (demo) ====== -->
+  <div id="tenant-login-verify-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+    <div class="bg-white rounded-3xl shadow-xl border border-warm p-6 w-full max-w-md">
+      <h3 class="font-display text-xl font-bold mb-2">Enter Verification Code</h3>
+      <p id="tlv-desc" class="text-sm text-navy/60 mb-4">Please enter the 5-digit code sent to <span id="tlv-email-mask" class="font-medium"></span>.</p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-sm font-medium mb-1">Verification Code</label>
+          <input id="tlv-code" type="text" maxlength="6" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none">
+        </div>
+        <div class="flex gap-2">
+          <button id="tlv-verify-btn" onclick="verifyTenantLoginCode()" class="flex-1 px-4 py-2 bg-sage text-cream rounded-xl btn-press">Verify</button>
+          <button type="button" onclick="closeTenantLoginVerifyModal()" class="px-4 py-2 bg-warm rounded-xl btn-press">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="tenant-dashboard" class="hidden min-h-screen flex flex-col md:flex-row">
     <aside class="w-full md:w-60 bg-navy text-cream flex flex-col flex-shrink-0">
       <div class="px-5 py-5 border-b border-white/10">
@@ -280,7 +302,8 @@
         <div class="text-cream/50 text-xs mt-1">Tenant Portal</div>
       </div>
       <nav class="flex md:flex-col flex-row overflow-x-auto p-2 md:p-3 gap-1">
-        <button onclick="showTenantDashboard()" class="tenant-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-tenant-nav="home"><i class="fas fa-home text-xs w-4"></i> Home</button>
+        <button onclick="tenantNav('home')" id="tenant-nav-home" class="tenant-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-tenant-nav="home"><i class="fas fa-home text-xs w-4"></i> Home</button>
+        <button onclick="tenantNav('maintenance')" id="tenant-nav-maint" class="tenant-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap hidden md:inline-flex" data-tenant-nav="maintenance"><i class="fas fa-tools text-xs w-4"></i> Maintenance</button>
       </nav>
       <div class="p-2 md:p-3 border-t border-white/10 mt-auto">
         <button onclick="tenantLogout()" class="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left text-cream/70">
@@ -289,6 +312,7 @@
       </div>
     </aside>
     <main class="flex-1 overflow-auto bg-cream p-6">
+      <div id="tenant-view-home">
       <div class="max-w-3xl mx-auto">
         <div class="bg-white rounded-3xl shadow-xl border border-warm p-6">
           <div class="flex items-center justify-between mb-4">
@@ -306,6 +330,7 @@
             <div class="bg-cream rounded-xl p-4">
               <div class="text-xs text-navy/50 mb-1">Lease Period</div>
               <div id="td-lease" class="font-semibold">—</div>
+              <div id="td-days-left" class="text-xs text-navy/40 mt-1"></div>
               <div class="text-xs text-navy/40 mt-2">Last Paid: <span id="td-lastpaid">—</span></div>
             </div>
             <div class="bg-cream rounded-xl p-4">
@@ -322,6 +347,42 @@
           <h4 class="text-sm font-semibold mb-2">Recent Payments</h4>
           <div id="td-recent-payments" class="space-y-2 text-sm text-navy/60">No recent payments.</div>
         </div>
+          <div class="mt-6">
+            <h4 class="text-sm font-semibold mb-2">Maintenance Requests</h4>
+            <div id="td-maintenance-requests" class="space-y-2 text-sm text-navy/60">No maintenance requests.</div>
+            
+          </div>
+      </div>
+      </div>
+
+      <div id="tenant-view-maintenance" class="hidden">
+        <div class="max-w-3xl mx-auto">
+          <div class="bg-white rounded-3xl shadow-xl border border-warm p-6">
+            <h3 class="font-display text-xl font-bold mb-2">Request Maintenance</h3>
+            <p class="text-sm text-navy/60 mb-4">Submit an issue name, description, and attach a photo (optional). We will notify the admin.</p>
+            <form onsubmit="submitTenantMaintenancePage(event)" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium mb-1">Issue</label>
+                <input id="tpage-issue" type="text" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Description</label>
+                <textarea id="tpage-desc" rows="4" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Attach Photo (optional)</label>
+                <div class="flex items-center gap-2">
+                  <input id="tpage-photo" type="file" accept="image/*" class="text-sm" />
+                  <img id="tpage-photo-preview" src="" class="hidden w-28 h-20 object-cover rounded-md border border-warm" alt="preview" />
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-sage text-cream rounded-xl btn-press">Submit Request</button>
+                <button type="button" onclick="tenantNav('home')" class="px-4 py-2 bg-warm rounded-xl btn-press">Back</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -329,12 +390,13 @@
     <aside class="w-full md:w-60 bg-navy text-cream flex flex-col flex-shrink-0">
       <div class="px-5 py-5 border-b border-white/10">
         <div class="font-display text-xl font-bold" id="admin-brand">UnityRent</div>
-        <div class="text-cream/50 text-xs mt-1">Owner Dashboard</div>
+        <div class="text-cream/50 text-xs mt-1">Admin Dashboard</div>
       </div>
       <nav class="flex md:flex-col flex-row overflow-x-auto p-2 md:p-3 gap-1">
         <button onclick="adminNav('overview')" class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="overview"><i class="fas fa-chart-line text-xs w-4"></i> Overview</button>
         <button onclick="adminNav('manage')"   class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="manage"><i class="fas fa-building text-xs w-4"></i> Units</button>
         <button onclick="adminNav('bookings')" class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="bookings"><i class="fas fa-calendar-check text-xs w-4"></i> Requests</button>
+        <button onclick="adminNav('maintenance')" class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="maintenance"><i class="fas fa-tools text-xs w-4"></i> Maintenance</button>
         <button onclick="adminNav('tenants')"  class="admin-nav-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors btn-press text-left whitespace-nowrap" data-admin-nav="tenants"><i class="fas fa-users text-xs w-4"></i> Tenants</button>
       </nav>
       <div class="p-2 md:p-3 border-t border-white/10 mt-auto">
@@ -345,7 +407,12 @@
     </aside>
     <main class="flex-1 overflow-auto bg-cream">
       <div id="admin-overview" class="p-5 md:p-8 fade-in">
-        <h2 class="font-display text-2xl md:text-3xl font-bold mb-7">Dashboard Overview</h2>
+        <div class="flex items-center justify-between mb-7 gap-3">
+          <h2 class="font-display text-2xl md:text-3xl font-bold">Dashboard Overview</h2>
+          <div class="flex items-center gap-2">
+            <button onclick="openBusyModal()" class="px-4 py-2 rounded-xl bg-warm hover:bg-navy/10 btn-press text-sm">Manage Busy Schedule</button>
+          </div>
+        </div>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
           <div class="bg-white rounded-2xl p-4 shadow-sm border border-warm"><div class="text-navy/50 text-xs mb-1">Total Units</div><div class="text-3xl font-display font-bold" id="admin-total-units">0</div></div>
           <div class="bg-white rounded-2xl p-4 shadow-sm border border-warm"><div class="text-navy/50 text-xs mb-1">Active Listings</div><div class="text-3xl font-display font-bold text-sage" id="admin-active-units">0</div></div>
@@ -369,6 +436,28 @@
         <div id="admin-bookings-list" class="space-y-3"></div>
         <div id="no-bookings" class="hidden text-center py-16 text-lg text-navy/50">No viewing requests yet.</div>
       </div>
+      <div id="admin-maintenance" class="p-5 md:p-8 fade-in hidden">
+        <h2 class="font-display text-2xl md:text-3xl font-bold mb-7">Maintenance Requests</h2>
+        <div id="admin-maintenance-list" class="space-y-3"></div>
+          <div id="no-maintenance" class="hidden text-center py-16 text-lg text-navy/50">No maintenance requests yet.</div>
+          <!-- Popup container (absolute within admin-maintenance) -->
+          <div id="admin-maintenance-popup" class="hidden absolute left-1/2 top-8 -translate-x-1/2 w-full max-w-2xl bg-white rounded-2xl p-5 border border-warm shadow-lg z-40">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-sm text-navy/60" id="amd-sub-popup">Submitted: <span id="amd-created-popup">—</span></div>
+              <button onclick="closeAdminMaintenanceDetail()" class="p-2 hover:bg-warm rounded-xl transition-colors"><i class="fas fa-times text-sm"></i></button>
+            </div>
+            <div class="text-sm font-semibold" id="amd-tenant-popup">Tenant · Unit</div>
+            <div class="text-xs text-navy/50" id="amd-email-popup">email</div>
+            <div id="amd-photo-wrap-popup" class="hidden mt-3"><img id="amd-photo-popup" src="" class="w-full h-40 object-cover rounded-md border border-warm" alt="photo" /></div>
+            <div class="text-sm mt-3" id="amd-desc-popup">Description…</div>
+            <div class="text-xs text-navy/50 mt-2">Status: <span id="amd-status-popup">—</span></div>
+            <div class="text-xs text-navy/50">Scheduled: <span id="amd-sched-popup">—</span></div>
+            <div class="mt-4 flex items-center gap-2">
+              <button id="amd-schedule-btn-popup" onclick="event.stopPropagation(); openAdminScheduleModal(window._amdCurrentId)" class="px-4 py-2 bg-sage text-cream rounded-xl btn-press">Schedule</button>
+              <button onclick="event.stopPropagation(); deleteMaintenanceRequest(window._amdCurrentId); closeAdminMaintenanceDetail();" class="ml-auto px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl btn-press">Delete</button>
+            </div>
+          </div>
+      </div>
       <div id="admin-tenants" class="p-5 md:p-8 fade-in hidden">
         <div class="flex items-center justify-between mb-7 flex-wrap gap-3">
           <h2 class="font-display text-2xl md:text-3xl font-bold">Current Tenants</h2>
@@ -388,6 +477,9 @@
       </div>
     </main>
   </div>
+      
+
+
 
   <!-- ====== UNIT EDITOR MODAL ====== -->
   <div id="unit-editor-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
@@ -475,7 +567,18 @@
       </div>
       <form onsubmit="saveTenant(event)" class="space-y-4">
         <div><label class="block text-sm font-medium mb-1.5">Full Name</label><input id="te-name" type="text" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="Maria Santos"></div>
-        <div><label class="block text-sm font-medium mb-1.5">Email</label><input id="te-email" type="email" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="maria@email.com"></div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Email</label>
+          <div class="flex items-center gap-2">
+            <input id="te-email" type="email" required class="flex-1 px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="maria@email.com">
+            <button id="te-send-ver-btn" type="button" onclick="sendEditorTenantVerification(document.getElementById('te-email').value||'')" class="px-3 py-2 rounded-xl bg-warm text-sm btn-press">Send verification</button>
+          </div>
+          <div id="te-verify-row" class="hidden mt-2 flex items-center gap-2">
+            <input id="te-verify-code" type="text" maxlength="6" placeholder="Enter code" class="px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none w-40 text-sm">
+            <button id="te-verify-btn" type="button" onclick="verifyEditorTenantCode()" class="px-3 py-2 rounded-xl bg-sage text-cream text-sm btn-press">Verify</button>
+            <div id="te-verify-status" class="text-sm text-navy/60"></div>
+          </div>
+        </div>
         <div><label class="block text-sm font-medium mb-1.5">Phone</label><input id="te-phone" type="tel" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="0917-555-1234"></div>
         <div>
           <label class="block text-sm font-medium mb-1.5">Password (optional)</label>
@@ -600,14 +703,22 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium mb-1">Email</label>
-                  <input id="v-email" type="email" required class="w-full px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none">
+                      <div class="flex items-center gap-2">
+                        <input id="v-email" type="email" required class="flex-1 px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none">
+                        <button id="v-send-ver-btn" type="button" onclick="sendVisitorVerification(document.getElementById('v-email').value||'')" class="px-3 py-2 rounded-xl bg-warm text-sm btn-press">Send verification</button>
+                      </div>
+                      <div id="v-verify-row" class="hidden mt-2 flex items-center gap-2">
+                        <input id="v-verify-code" type="text" maxlength="6" placeholder="Enter code" class="px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none w-40 text-sm">
+                        <button id="v-verify-btn" type="button" onclick="verifyVisitorCode()" class="px-3 py-2 rounded-xl bg-sage text-cream text-sm btn-press">Verify</button>
+                        <div id="v-verify-status" class="text-sm text-navy/60"></div>
+                      </div>
                 </div>
                 <div>
                   <label class="block text-sm font-medium mb-1">Phone</label>
                   <input id="v-phone" type="tel" required class="w-full px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none">
                 </div>
                 <div class="flex gap-3 pt-1">
-                  <button id="v-continue-btn" type="button" onclick="saveVisitorInfo(event)" class="flex-1 px-4 py-2 bg-sage text-cream rounded-xl font-semibold btn-press">Continue</button>
+                      <button id="v-continue-btn" type="button" onclick="saveVisitorInfo(event)" class="flex-1 px-4 py-2 bg-sage text-cream rounded-xl font-semibold btn-press" disabled>Continue</button>
                 </div>
               </div>
             </div>
@@ -658,8 +769,53 @@
     </div>
   </div>
 </div>
+<!-- Tenant maintenance modal -->
+<div id="tenant-maintenance-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+  <div class="bg-white rounded-3xl shadow-xl border border-warm p-6 w-full max-w-md">
+    <h3 class="font-display text-xl font-bold mb-2">Request Maintenance</h3>
+    <p class="text-sm text-navy/60 mb-4">Describe the issue and preferred access times. Admin will review and schedule.</p>
+    <form onsubmit="submitMaintenanceRequest(event)" class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">Name</label>
+        <input id="tm-name" type="text" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Description</label>
+        <textarea id="tm-desc" rows="4" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"></textarea>
+      </div>
+      
+      <div class="flex gap-2">
+        <button type="submit" class="flex-1 px-4 py-2 bg-sage text-cream rounded-xl btn-press">Submit Request</button>
+        <button type="button" onclick="closeTenantMaintenanceModal()" class="px-4 py-2 bg-warm rounded-xl btn-press">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Admin schedule modal for maintenance -->
+<div id="admin-schedule-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+  <div class="bg-white rounded-3xl shadow-xl border border-warm p-6 w-full max-w-md">
+    <h3 class="font-display text-xl font-bold mb-2">Schedule Maintenance</h3>
+    <p class="text-sm text-navy/60 mb-4">Choose a date/time to schedule; the tenant will be notified automatically.</p>
+    <form onsubmit="handleAdminScheduleSubmit(event)" class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">Date & Time</label>
+        <input id="am-date" type="datetime-local" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Note (optional)</label>
+        <input id="am-note" type="text" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" />
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" class="flex-1 px-4 py-2 bg-sage text-cream rounded-xl btn-press">Schedule</button>
+        <button type="button" onclick="closeAdminScheduleModal()" class="px-4 py-2 bg-warm rounded-xl btn-press">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- ====== SCRIPTS ====== -->
+  
 <script>
 // ============ DATA ============
 const units = [
@@ -724,6 +880,14 @@ const tenants  = [
   { name:'Rico Dela',    unit:'Skyline Duplex',    leaseStart:'2024-12-01', leaseEnd:'2025-11-30', status:'Active',   email:'rico@email.com',   phone:'0924-555-5555', paid:true,  lastPaid:'2025-03-10', dueDate:'2026-04-16', password:'1234' },
   { name:'Ana Gutierrez',unit:'Penthouse Loft',   leaseStart:'2025-01-15', leaseEnd:'2026-01-14', status:'Active',   email:'ana@email.com',    phone:'0925-555-6666', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
 ];
+// Admin contact shown in tenant contact sections
+const ADMIN_CONTACT_EMAIL = 'admin@unityrent.com';
+const ADMIN_CONTACT_PHONE = '0917-000-0000';
+// Maintenance requests storage
+const maintenanceRequests = [
+  { id:'m_sample_1', tenantEmail: tenants[0].email, tenantName: tenants[0].name, unit: tenants[0].unit, description: 'Leaky faucet in the kitchen sink. Water pooling under cabinet.', createdAt: new Date().toISOString(), status:'Pending', scheduledAt: null, photoData: null },
+  { id:'m_sample_2', tenantEmail: tenants[1].email, tenantName: tenants[1].name, unit: tenants[1].unit, description: 'Aircon making loud noise intermittently.', createdAt: new Date().toISOString(), status:'Pending', scheduledAt: null, photoData: null }
+]; // { id, tenantEmail, tenantName, unit, description, createdAt, status, scheduledAt, photoData }
 
 // Visitor contact (persist while browsing)
 window.visitor = { name:'', email:'', phone:'' };
@@ -770,7 +934,7 @@ function navigateTo(view) {
   document.getElementById('public-portal').classList.remove('hidden');
   document.getElementById('admin-login-view').classList.add('hidden');
   document.getElementById('admin-dashboard').classList.add('hidden');
-  ['home','units','detail','bookings'].forEach(v =>
+  ['home','units','detail','bookings','maintenance'].forEach(v =>
     document.getElementById('view-'+v).classList.toggle('hidden', v !== view));
   currentView = view;
   if (view==='units') {
@@ -947,11 +1111,21 @@ function calBookedDates(unitId) {
   const booked = new Set();
   const busy = new Set();
   if (!unit) return { booked, busy };
+  // Mark a date as 'booked' only when all time slots are taken for that unit on that date.
+  // Otherwise, individual slots will be shown as taken and the day remains selectable.
+  // Build a map of dateStr -> count of booked slots
+  const slotCounts = {};
   bookings.forEach(b => {
-    if (b.unitName === unit.name) {
-      const dt = new Date(b.datetime);
-      booked.add(calDateStr(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+    if (b.unitName === unit.name && b.datetime) {
+      try {
+        const dt = new Date(b.datetime);
+        const ds = calDateStr(dt.getFullYear(), dt.getMonth(), dt.getDate());
+        slotCounts[ds] = (slotCounts[ds]||0) + 1;
+      } catch(e) {}
     }
+  });
+  Object.keys(slotCounts).forEach(ds => {
+    if (slotCounts[ds] >= TIME_SLOTS.length) booked.add(ds);
   });
   if (Array.isArray(unit.busyDates)) {
     unit.busyDates.forEach(ds => busy.add(ds));
@@ -1156,6 +1330,16 @@ function promptVisitorInfoAndGo() {
       const vn = document.getElementById('v-name'); if (vn) vn.value = window.visitor.name || '';
       const ve = document.getElementById('v-email'); if (ve) ve.value = window.visitor.email || '';
       const vp = document.getElementById('v-phone'); if (vp) vp.value = window.visitor.phone || '';
+      // If email was previously verified, enable continue
+      const contBtn = document.getElementById('v-continue-btn');
+      if (window.visitor.verifiedEmail && ve && contBtn) {
+        if ((ve.value||'').trim().toLowerCase() === (window.visitor.verifiedEmail||'').toLowerCase()) {
+          contBtn.disabled = false;
+          const st = document.getElementById('v-verify-status'); if(st) st.textContent = 'Verified ✓';
+        } else {
+          contBtn.disabled = true;
+        }
+      }
     }
     // show modal (Tailwind 'hidden' toggle + explicit style fallback)
     modal.classList.remove('hidden');
@@ -1167,6 +1351,7 @@ function promptVisitorInfoAndGo() {
     const first = document.getElementById('v-name'); if (first) setTimeout(()=>first.focus(), 60);
   } catch (err) { console.error(err); navigateTo('units'); }
 }
+// (photo preview handlers removed)
 function closeVisitorModal() {
   const modal = document.getElementById('visitor-info-modal');
   if (!modal) return;
@@ -1181,10 +1366,13 @@ function closeVisitorModal() {
 function saveVisitorInfo(e) {
   e.preventDefault();
   const n = document.getElementById('v-name').value.trim();
-  const em = document.getElementById('v-email').value.trim();
+  const em = document.getElementById('v-email').value.trim().toLowerCase();
   const p = document.getElementById('v-phone').value.trim();
+  // Require email verification
+  const verified = window.visitor && window.visitor.verifiedEmail === em;
+  if (!verified) { alert('Please verify your email before continuing. Click "Send verification" and enter the code.'); return; }
   console.log('saveVisitorInfo called', { name: n, email: em, phone: p });
-  window.visitor = { name:n, email:em, phone:p };
+  window.visitor = { name:n, email:em, phone:p, verifiedEmail: em };
   console.log('visitor saved', window.visitor);
   closeVisitorModal();
   // If a booking was pending, open it now using saved visitor info
@@ -1225,7 +1413,12 @@ function openBooking(unitId) {
   console.log('openBooking called', unitId);
   // Prefill contact fields from visitor if available; clear message & datetime
   document.getElementById('bk-name').value  = (window.visitor && window.visitor.name) ? window.visitor.name : '';
-  document.getElementById('bk-email').value = (window.visitor && window.visitor.email) ? window.visitor.email : '';
+  const bkEmailEl = document.getElementById('bk-email');
+  bkEmailEl.value = (window.visitor && window.visitor.email) ? window.visitor.email : '';
+  // If visitor email is verified, make the booking email non-editable to prevent changing
+  const verified = window.visitor && window.visitor.verifiedEmail && ((window.visitor.verifiedEmail||'').toLowerCase() === (bkEmailEl.value||'').toLowerCase());
+  bkEmailEl.readOnly = !!verified;
+  if (verified) bkEmailEl.title = 'Verified email — not editable'; else bkEmailEl.title = '';
   document.getElementById('bk-phone').value = (window.visitor && window.visitor.phone) ? window.visitor.phone : '';
   document.getElementById('bk-msg').value = '';
   document.getElementById('bk-datetime').value = '';
@@ -1250,6 +1443,26 @@ function submitBooking(e) {
   e.preventDefault();
   const dtVal = document.getElementById('bk-datetime').value;
   if (!dtVal) { alert('Please select a date and time from the calendar.'); return; }
+
+  // Enforce per-client monthly booking limit: max 2 bookings per calendar month
+  const bkEmail = (document.getElementById('bk-email').value||'').trim().toLowerCase();
+  if (!bkEmail) { alert('Booking email is required.'); return; }
+  // Determine booking month/year from selected datetime
+  const selDt = new Date(dtVal);
+  const selMonth = selDt.getMonth(); const selYear = selDt.getFullYear();
+  // Count existing bookings for this email in same month/year (exclude editing booking if present)
+  const editingId = window.editingBookingId || null;
+  const countThisMonth = bookings.reduce((acc,b) => {
+    try{
+      if (!b.email) return acc;
+      if ((b.email||'').trim().toLowerCase() !== bkEmail) return acc;
+      if (editingId && b.id === editingId) return acc; // exclude current when editing
+      const bd = new Date(b.datetime);
+      if (bd.getFullYear() === selYear && bd.getMonth() === selMonth) return acc+1;
+    }catch(e){}
+    return acc;
+  }, 0);
+  if (countThisMonth >= 2) { alert('You have reached the maximum of 2 viewing requests for this month for this email.'); return; }
 
   if (window.editingBookingId) {
     const b = bookings.find(x => x.id === window.editingBookingId);
@@ -1451,13 +1664,14 @@ function handleAdminLogin(e) {
 }
 function adminLogout() { navigateTo('home'); }
 function adminNav(view) {
-  ['overview','manage','bookings','tenants'].forEach(v =>
+  ['overview','manage','bookings','maintenance','tenants'].forEach(v =>
     document.getElementById('admin-'+v).classList.toggle('hidden', v!==view));
   document.querySelectorAll('.admin-nav-btn').forEach(b =>
     b.classList.toggle('bg-white/15', b.dataset.adminNav===view));
   if (view==='overview') renderAO();
   if (view==='manage')   renderAUnits();
   if (view==='bookings') renderABookings();
+  if (view==='maintenance') renderAMaintenance();
   if (view==='tenants')  renderATenants();
 }
 
@@ -1748,26 +1962,199 @@ function renderATenants(){
   if(!items.length){ cont.innerHTML = '<div class="text-center py-12 text-navy/50">No tenants match this filter.</div>'; return; }
   items.forEach(obj=>{
     const t = obj.t; const idx = obj.idx;
+    // Compute lease days remaining and update status accordingly
+    let daysRemaining = null;
+    try {
+      if (t.leaseEnd) {
+        const end = new Date(t.leaseEnd);
+        const today = new Date(); today.setHours(0,0,0,0);
+        end.setHours(0,0,0,0);
+        const diffMs = end.getTime() - today.getTime();
+        daysRemaining = Math.ceil(diffMs / (1000*60*60*24));
+      }
+    } catch(e) { daysRemaining = null; }
+    // Determine status based on daysRemaining
+    let computedStatus = (t.status||'Active');
+    if (daysRemaining !== null) {
+      if (daysRemaining <= 0) computedStatus = 'Inactive';
+      else if (daysRemaining <= 45) computedStatus = 'Expiring';
+      else computedStatus = 'Active';
+    }
+    // Persist computed status so filters and other UI reflect it
+    if (t.status !== computedStatus) t.status = computedStatus;
     const div=document.createElement('div');
     div.className='bg-white rounded-xl p-4 border border-warm flex items-center justify-between flex-wrap gap-3';
-    const sc=t.status==='Active'?'bg-sage/10 text-sage':t.status==='Expiring'?'bg-yellow-100 text-yellow-800':'bg-navy/5 text-navy/40';
+    const sc = computedStatus==='Active' ? 'bg-sage/10 text-sage' : computedStatus==='Expiring' ? 'bg-yellow-100 text-yellow-800' : 'bg-navy/5 text-navy/40';
     const pstate = getPaymentState(t);
     const payClass = pstate === 'Paid' ? 'bg-sage/10 text-sage' : pstate === 'Overdue' ? 'bg-red-100 text-red-800' : 'bg-warm text-navy/70';
     const payLabel = pstate === 'Paid' ? 'Paid' : pstate === 'Overdue' ? 'Overdue' : 'Unpaid';
+    // Build lease display with countdown
+    let leaseInfo = `${t.leaseStart || '—'} → ${t.leaseEnd || '—'}`;
+    if (daysRemaining === null) {
+      // no change
+    } else if (daysRemaining <= 0) {
+      leaseInfo += ` · Expired`;
+    } else if (daysRemaining === 1) {
+      leaseInfo += ` · 1 day left`;
+    } else {
+      leaseInfo += ` · ${daysRemaining} days left`;
+    }
+
+    // build a small days badge
+    const daysBadge = (daysRemaining === null) ? '' : (daysRemaining <= 0 ? `<span class="ml-2 px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-xs">0d</span>` : `<span class="ml-2 px-2 py-0.5 rounded-full bg-warm text-navy/70 text-xs">${daysRemaining}d</span>`);
     div.innerHTML=`
       <div>
-        <div class="text-sm font-semibold">${t.name}</div>
+        <div class="text-sm font-semibold">${t.name} ${daysBadge}</div>
         <div class="text-xs text-navy/50">${t.unit} · ${t.email}</div>
-        <div class="text-xs text-navy/40">${t.leaseStart} → ${t.leaseEnd}</div>
+        <div class="text-xs text-navy/40">${leaseInfo}</div>
         <div class="text-xs text-navy/40 mt-2">Last Paid: ${t.lastPaid||'—'}</div>
       </div>
       <div class="flex items-center gap-2">
-        <span class="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${sc}">${t.status}</span>
+        <span class="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${sc}">${computedStatus}</span>
         <button onclick="toggleTenantPayment(${idx})" class="px-2.5 py-1 rounded-full text-xs font-semibold ${payClass} btn-press">${payLabel}</button>
         <button onclick="openTenantEditor(${idx})" class="px-2.5 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press"><i class="fas fa-edit text-xs"></i></button>
         <button onclick="deleteTenant(${idx})" class="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors btn-press"><i class="fas fa-trash-alt text-xs"></i></button>
       </div>`;
     cont.appendChild(div);
+  });
+}
+function renderAMaintenance(){
+  const cont = document.getElementById('admin-maintenance-list'); if(!cont) return; cont.innerHTML='';
+  if(!maintenanceRequests.length){ document.getElementById('no-maintenance').classList.remove('hidden'); return; }
+  document.getElementById('no-maintenance').classList.add('hidden');
+  maintenanceRequests.slice().reverse().forEach(req=>{
+    const div = document.createElement('div');
+    div.className='bg-white rounded-xl p-4 border border-warm flex items-center justify-between flex-wrap gap-3 cursor-pointer';
+    div.onclick = () => openAdminMaintenanceDetail(req.id);
+    const sc = req.status==='Pending'?'bg-yellow-100 text-yellow-800':req.status==='Scheduled'?'bg-sage/10 text-sage':'bg-navy/5 text-navy/40';
+    const when = req.scheduledAt ? new Date(req.scheduledAt).toLocaleString() : '—';
+    div.innerHTML = `
+      <div style="min-width:0; flex:1;">
+        <div class="text-sm font-semibold">${req.tenantName} · ${req.unit}</div>
+        <div class="text-xs text-navy/50 truncate">${req.tenantEmail}</div>
+        <div class="text-xs text-navy/40 mt-1 truncate">${req.description}</div>
+        <div class="text-xs text-navy/40 mt-2">Scheduled: ${when}</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${sc}">${req.status}</span>
+        <button onclick="event.stopPropagation(); openAdminScheduleModal('${req.id}')" class="px-3 py-1.5 rounded-xl bg-sage text-cream btn-press text-sm">Schedule</button>
+        <button onclick="event.stopPropagation(); deleteMaintenanceRequest('${req.id}')" class="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 btn-press text-sm">Delete</button>
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+
+function openAdminScheduleModal(id){
+  window._adminScheduleReqId = id;
+  document.getElementById('am-date').value = '';
+  document.getElementById('am-note').value = '';
+  document.getElementById('admin-schedule-modal').classList.remove('hidden');
+}
+function closeAdminScheduleModal(){ document.getElementById('admin-schedule-modal').classList.add('hidden'); }
+function handleAdminScheduleSubmit(e){
+  e.preventDefault();
+  const id = window._adminScheduleReqId; if(!id) return closeAdminScheduleModal();
+  const dt = document.getElementById('am-date').value; const note = document.getElementById('am-note').value || '';
+  const req = maintenanceRequests.find(r=>r.id===id); if(!req){ alert('Request not found.'); closeAdminScheduleModal(); return; }
+  req.scheduledAt = dt; req.status = 'Scheduled'; req.adminNote = note;
+  // demo notify
+  alert('Tenant notified (demo) at ' + (req.tenantEmail||'') + '\nScheduled: ' + dt + '\nNote: ' + note);
+  closeAdminScheduleModal(); renderAMaintenance(); renderTenantMaintenanceList();
+  // refresh open detail if it's the same request
+  if (window._amdCurrentId === id) openAdminMaintenanceDetail(id);
+}
+function deleteMaintenanceRequest(id){ const idx = maintenanceRequests.findIndex(r=>r.id===id); if(idx>=0) maintenanceRequests.splice(idx,1); renderAMaintenance(); renderTenantMaintenanceList(); if(window._amdCurrentId===id) closeAdminMaintenanceDetail(); }
+// Reconcile maintenance statuses: Scheduled -> Completed after scheduled time passes
+function maintenanceStatusReconcile(){
+  const now = new Date();
+  let changed = false;
+  maintenanceRequests.forEach(r => {
+    if(r.status === 'Scheduled' && r.scheduledAt){
+      const s = new Date(r.scheduledAt);
+      if(s.getTime() < now.getTime()){
+        r.status = 'Completed';
+        changed = true;
+      }
+    }
+  });
+  if(changed){ renderAMaintenance(); renderTenantMaintenanceList(); if(window._amdCurrentId){ const cur = maintenanceRequests.find(x=>x.id===window._amdCurrentId); if(cur) openAdminMaintenanceDetail(cur.id); else closeAdminMaintenanceDetail(); } }
+}
+
+function openAdminMaintenanceDetail(id){
+  const req = maintenanceRequests.find(r=>r.id===id); if(!req) return; window._amdCurrentId = id;
+  document.getElementById('amd-created-popup').textContent = new Date(req.createdAt).toLocaleString();
+  document.getElementById('amd-tenant-popup').textContent = `${req.tenantName} · ${req.unit}`;
+  document.getElementById('amd-email-popup').textContent = req.tenantEmail || '';
+  document.getElementById('amd-desc-popup').textContent = req.description || '';
+  document.getElementById('amd-status-popup').textContent = req.status || '';
+  document.getElementById('amd-sched-popup').textContent = req.scheduledAt ? new Date(req.scheduledAt).toLocaleString() : '—';
+  if(req.photoData){ document.getElementById('amd-photo-popup').src = req.photoData; document.getElementById('amd-photo-wrap-popup').classList.remove('hidden'); } else { document.getElementById('amd-photo-popup').src=''; document.getElementById('amd-photo-wrap-popup').classList.add('hidden'); }
+  const pop = document.getElementById('admin-maintenance-popup'); if(pop) pop.classList.remove('hidden');
+}
+function closeAdminMaintenanceDetail(){ const pop = document.getElementById('admin-maintenance-popup'); if(pop) pop.classList.add('hidden'); window._amdCurrentId = null; }
+
+// Tenant maintenance handlers
+function openTenantMaintenanceModal(){
+  const idx = currentTenantIndex; const name = (idx!==null && tenants[idx]) ? tenants[idx].name : (window.visitor && window.visitor.name) || '';
+  document.getElementById('tm-name').value = name;
+  document.getElementById('tm-desc').value = '';
+  document.getElementById('tenant-maintenance-modal').classList.remove('hidden');
+}
+function closeTenantMaintenanceModal(){ document.getElementById('tenant-maintenance-modal').classList.add('hidden'); }
+function submitMaintenanceRequest(e){
+  e.preventDefault();
+  const name = document.getElementById('tm-name').value.trim();
+  const desc = document.getElementById('tm-desc').value.trim();
+  if(!desc){ alert('Please describe the issue.'); return; }
+  const email = (currentTenantIndex!==null && tenants[currentTenantIndex]) ? tenants[currentTenantIndex].email : (window.visitor && window.visitor.email) || '';
+  const unit = (currentTenantIndex!==null && tenants[currentTenantIndex]) ? tenants[currentTenantIndex].unit : (window.visitor && window.visitor.unit) || '';
+  const id = 'm'+Date.now();
+  maintenanceRequests.push({ id, tenantEmail: email, tenantName: name || email, unit: unit || '—', description: desc, createdAt: new Date().toISOString(), status:'Pending', scheduledAt: null });
+  closeTenantMaintenanceModal();
+  alert('Maintenance request submitted. Admin will schedule and notify you.');
+  renderTenantMaintenanceList();
+}
+
+async function submitTenantMaintenancePage(e){
+  e.preventDefault();
+  if (currentTenantIndex === null || !tenants[currentTenantIndex]) { alert('Tenant not found.'); return; }
+  const issue = document.getElementById('tpage-issue').value.trim();
+  const desc = document.getElementById('tpage-desc').value.trim();
+  if(!issue || !desc){ alert('Please provide issue and description.'); return; }
+  const photoEl = document.getElementById('tpage-photo');
+  let photoData = null; let photoName = null;
+  if (photoEl && photoEl.files && photoEl.files.length) {
+    const f = photoEl.files[0]; photoName = f.name;
+    photoData = await new Promise((res, rej) => { const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); });
+  }
+  const t = tenants[currentTenantIndex];
+  const id = 'm'+Date.now();
+  maintenanceRequests.push({ id, tenantEmail: t.email, tenantName: t.name, unit: t.unit || '—', description: issue + '\n' + desc, createdAt: new Date().toISOString(), status:'Pending', scheduledAt: null, photoData, photoName });
+  // reset form
+  document.getElementById('tpage-issue').value = '';
+  document.getElementById('tpage-desc').value = '';
+  if (document.getElementById('tpage-photo-preview')) { document.getElementById('tpage-photo-preview').src=''; document.getElementById('tpage-photo-preview').classList.add('hidden'); }
+  if (document.getElementById('tpage-photo')) { document.getElementById('tpage-photo').value = ''; }
+  alert('Maintenance request submitted. Admin will review and schedule.');
+  renderTenantMaintenanceList();
+  tenantNav('home');
+}
+
+// preview for tenant maintenance page photo
+document.addEventListener('change', function(e){ if(e.target && e.target.id === 'tpage-photo'){ const f = e.target.files && e.target.files[0]; const p = document.getElementById('tpage-photo-preview'); if(f && p){ const r=new FileReader(); r.onload=()=>{ p.src = r.result; p.classList.remove('hidden'); }; r.readAsDataURL(f); } else if(p){ p.src=''; p.classList.add('hidden'); } } });
+function renderTenantMaintenanceList(){
+  const el = document.getElementById('td-maintenance-requests'); if(!el) return; el.innerHTML='';
+  const email = (currentTenantIndex!==null && tenants[currentTenantIndex]) ? tenants[currentTenantIndex].email : (window.visitor && window.visitor.email) || '';
+  const list = maintenanceRequests.filter(r => (r.tenantEmail||'').toLowerCase() === (email||'').toLowerCase());
+  if(!list.length){ el.textContent = 'No maintenance requests.'; return; }
+  list.slice().reverse().forEach(r => {
+    const d = document.createElement('div'); d.className='bg-white rounded-xl p-3 border border-warm';
+    const photoHtml = r.photoData ? `<div class="mb-2"><img src="${r.photoData}" class="w-28 h-20 object-cover rounded-md border border-warm" alt="photo" /></div>` : '';
+    const sc = r.status==='Pending' ? 'bg-yellow-100 text-yellow-800' : r.status==='Scheduled' ? 'bg-sage/10 text-sage' : 'bg-navy/5 text-navy/40';
+    const statusHtml = `<div class="mt-2"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${sc}">${r.status}</span></div>`;
+    const schedHtml = r.scheduledAt ? `<div class="text-xs text-navy/50 mt-1">Scheduled: ${new Date(r.scheduledAt).toLocaleString()}</div>` : '';
+    d.innerHTML = `${photoHtml}<div class="text-sm font-semibold">${r.description}</div>${statusHtml}${schedHtml}`;
+    el.appendChild(d);
   });
 }
 function toggleTenantPayment(idx){
@@ -1819,6 +2206,11 @@ function openTenantEditor(id){
     document.getElementById('te-password').value = t.password || '';
     document.getElementById('te-due-date').value = t.dueDate || '';
     document.getElementById('te-submit-btn').textContent='Update Tenant';
+    // mark editor email as verified by default (editing existing tenant)
+    window.tenantEditorVerifiedEmail = (t.email||'').toLowerCase();
+    // hide verify row
+    const tr = document.getElementById('te-verify-row'); if(tr) tr.classList.add('hidden');
+    const submitBtn = document.getElementById('te-submit-btn'); if(submitBtn) submitBtn.disabled = false;
   } else {
     document.getElementById('tenant-editor-title').textContent='Add New Tenant';
     ['te-name','te-email','te-phone','te-lease-start','te-lease-end'].forEach(i=>document.getElementById(i).value='');
@@ -1831,6 +2223,20 @@ function openTenantEditor(id){
     document.getElementById('te-password').value = '';
     document.getElementById('te-due-date').value = '';
   }
+  // When email input changes, clear editor verification state
+  const teEmailEl = document.getElementById('te-email');
+  if (teEmailEl) {
+    teEmailEl.oninput = function(){
+      const v = (this.value||'').trim().toLowerCase();
+      if (!v || window.tenantEditorVerifiedEmail !== v) {
+        window.tenantEditorVerifiedEmail = null;
+        const tr = document.getElementById('te-verify-row'); if(tr) tr.classList.add('hidden');
+        const st = document.getElementById('te-verify-status'); if(st) st.textContent='';
+      }
+    };
+  }
+  // If creating new tenant, require verification before enabling save
+  const submitBtn = document.getElementById('te-submit-btn'); if(submitBtn){ if(typeof id==='number') submitBtn.disabled = false; else submitBtn.disabled = true; }
   updateTSChips();
 }
 function closeTenantEditor(){ document.getElementById('tenant-editor-modal').classList.add('hidden'); }
@@ -1855,6 +2261,14 @@ function saveTenant(e){
     dueDate: document.getElementById('te-due-date') ? document.getElementById('te-due-date').value : '',
     password: document.getElementById('te-password') ? document.getElementById('te-password').value : ''
   };
+  const emNormalized = (data.email||'').trim().toLowerCase();
+  // Require email verification when creating a new tenant or when email changed
+  if (!emNormalized) { alert('Please provide an email.'); return; }
+  const origId = id!=='' ? parseInt(id) : null;
+  const origEmail = (origId !== null && tenants[origId]) ? ((tenants[origId].email||'').toLowerCase()) : null;
+  if (origEmail !== emNormalized) {
+    if (window.tenantEditorVerifiedEmail !== emNormalized) { alert('Please verify the tenant email before saving. Click "Send verification" and enter the code.'); return; }
+  }
   // Prevent assigning when unit is full (account for edits)
   if (!data.unit) { alert('Please select a unit.'); return; }
   const unitObj = units.find(u=>u.name===data.unit);
@@ -2000,20 +2414,15 @@ function handleTenantLogin(e){
   const idx = tenants.findIndex(t => (t.email||'').toLowerCase() === email);
   if (idx === -1) { if(errEl){ errEl.textContent='Tenant not found. Please check your email.'; errEl.classList.remove('hidden'); } return; }
   const tenant = tenants[idx];
-  // If tenant has a password set, require it
-  if (tenant.password && tenant.password.length) {
-    if (!pw) { if(errEl){ errEl.textContent='Enter password.'; errEl.classList.remove('hidden'); } return; }
-    if (pw !== tenant.password) { if(errEl){ errEl.textContent='Incorrect password.'; errEl.classList.remove('hidden'); } return; }
-    // success
-    currentTenantIndex = idx; if(errEl) errEl.classList.add('hidden'); closeTenantLogin(); showTenantDashboard(); return;
-  }
-  // No password set: ask user to verify via code first
-  if (!pw) {
-    if(errEl){ errEl.textContent='No password set. Click "Forgot password / Verify" to receive a verification code.'; errEl.classList.remove('hidden'); }
-    return;
-  }
-  // If user entered a pw but tenant has no password, require verification flow (prevent direct set without code)
-  if(errEl){ errEl.textContent='No password is registered. Use verification to set your password.'; errEl.classList.remove('hidden'); }
+  // Require password to match first
+  if (!pw) { if(errEl){ errEl.textContent='Enter password.'; errEl.classList.remove('hidden'); } return; }
+  if (!tenant.password || pw !== tenant.password) { if(errEl){ errEl.textContent='Incorrect password.'; errEl.classList.remove('hidden'); } return; }
+  // At this point credentials are correct — require a one-time verification code before final login
+  if(errEl) errEl.classList.add('hidden');
+  // store pending login and send verification
+  window._tenantPendingLogin = { idx, email };
+  sendTenantVerification(email);
+  return;
 }
 
 function showTenantDashboard(){
@@ -2023,8 +2432,26 @@ function showTenantDashboard(){
   document.getElementById('td-unit').textContent = t.unit || '—';
   document.getElementById('td-status').textContent = t.status || '—';
   document.getElementById('td-lease').textContent = (t.leaseStart||'—') + ' → ' + (t.leaseEnd||'—');
+  // compute days left until lease end
+  let daysLeftText = '';
+  try{
+    if (t.leaseEnd) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const end = new Date(t.leaseEnd); end.setHours(0,0,0,0);
+      const diffMs = end.getTime() - today.getTime();
+      const daysRemaining = Math.ceil(diffMs / (1000*60*60*24));
+      if (isNaN(daysRemaining)) daysLeftText = '';
+      else if (daysRemaining <= 0) daysLeftText = 'Lease expired';
+      else if (daysRemaining === 1) daysLeftText = '1 day left';
+      else daysLeftText = `${daysRemaining} days left`;
+    }
+  }catch(e){ daysLeftText = ''; }
+  const daysEl = document.getElementById('td-days-left'); if(daysEl) daysEl.textContent = daysLeftText;
   document.getElementById('td-lastpaid').textContent = t.lastPaid || '—';
-  document.getElementById('td-contact').textContent = (t.email||'') + (t.phone?(' · '+t.phone):'');
+  // Show tenant contact plus admin contact info
+  const tenantContact = (t.email||'') + (t.phone?(' · '+t.phone):'');
+  const adminContact = ADMIN_CONTACT_EMAIL + ' · ' + ADMIN_CONTACT_PHONE;
+  document.getElementById('td-contact').textContent = tenantContact ? (tenantContact + ' · Admin: ' + adminContact) : ('Admin: ' + adminContact);
   // show landlord-defined due date when present; otherwise compute next due naively
   if (t.dueDate) {
     document.getElementById('td-nextdue').textContent = t.dueDate;
@@ -2050,12 +2477,30 @@ function showTenantDashboard(){
   }
   // recent payments (global)
   renderTenantRecentPayments();
+  // render tenant maintenance requests on dashboard load
+  renderTenantMaintenanceList();
 
   // show dashboard and hide public portal views
   document.getElementById('tenant-dashboard').classList.remove('hidden');
   document.getElementById('public-portal').classList.add('hidden');
   document.getElementById('admin-login-view').classList.add('hidden');
   document.getElementById('admin-dashboard').classList.add('hidden');
+  // default to tenant home view
+  tenantNav('home');
+}
+
+function tenantNav(view){
+  const homeBtn = document.getElementById('tenant-nav-home');
+  const mBtn = document.getElementById('tenant-nav-maint');
+  const vh = document.getElementById('tenant-view-home');
+  const vm = document.getElementById('tenant-view-maintenance');
+  if(!vh || !vm) return;
+  vh.classList.toggle('hidden', view !== 'home');
+  vm.classList.toggle('hidden', view !== 'maintenance');
+  if(homeBtn) homeBtn.classList.toggle('chip-active', view === 'home');
+  if(mBtn) mBtn.classList.toggle('chip-active', view === 'maintenance');
+  // refresh maintenance list when switching views so sample/scheduled items show
+  if(view === 'home' || view === 'maintenance') renderTenantMaintenanceList();
 }
 
 function tenantPayNow(){
@@ -2114,11 +2559,69 @@ function sendTenantVerification(email){
   if(!em){ alert('Enter an email first.'); return; }
   const idx = tenants.findIndex(t => (t.email||'').toLowerCase()===em);
   if(idx===-1){ alert('No tenant with that email.'); return; }
-  const code = String(Math.floor(100000 + Math.random()*900000));
+  const code = '11111';
   window.tenantVerification[em] = { code, at: Date.now(), expires: Date.now()+5*60*1000 };
   // In a real app send via email; here we show it for demo
   alert('Verification code (demo): ' + code);
-  openTenantVerifyModal(em);
+  // Open the tenant login code modal (ask user to enter the code sent to their email)
+  openTenantLoginCodeModal(em);
+}
+
+// Visitor verification (demo)
+window.visitorVerification = window.visitorVerification || {};
+function sendVisitorVerification(email){
+  const em = (email||'').trim().toLowerCase();
+  if(!em){ alert('Enter an email first.'); return; }
+  const code = '11111';
+  window.visitorVerification[em] = { code, at: Date.now(), expires: Date.now()+5*60*1000 };
+  alert('Verification code (demo): ' + code);
+  // show verify row
+  const row = document.getElementById('v-verify-row'); if(row) row.classList.remove('hidden');
+  const st = document.getElementById('v-verify-status'); if(st) st.textContent = 'Code sent — expires in 5 minutes.';
+  const pin = document.getElementById('v-verify-code'); if(pin) setTimeout(()=>pin.focus(),60);
+  // disable continue until verified
+  const contBtn = document.getElementById('v-continue-btn'); if(contBtn) contBtn.disabled = true;
+}
+function verifyVisitorCode(){
+  const em = (document.getElementById('v-email').value||'').trim().toLowerCase();
+  const code = (document.getElementById('v-verify-code').value||'').trim();
+  if(!em || !code){ alert('Enter email and code.'); return; }
+  const rec = window.visitorVerification[em];
+  if(!rec || rec.code !== code){ alert('Invalid or expired code.'); return; }
+  // mark verified
+  window.visitor = window.visitor || {};
+  window.visitor.verifiedEmail = em;
+  // reflect in UI
+  const st = document.getElementById('v-verify-status'); if(st) st.textContent = 'Verified ✓';
+  const row = document.getElementById('v-verify-row'); if(row) row.classList.add('hidden');
+  const contBtn = document.getElementById('v-continue-btn'); if(contBtn) contBtn.disabled = false;
+  alert('Email verified. You may continue.');
+}
+
+// Tenant editor verification (admin adding tenant)
+window.tenantEditorVerification = window.tenantEditorVerification || {};
+function sendEditorTenantVerification(email){
+  const em = (email||'').trim().toLowerCase();
+  if(!em){ alert('Enter an email first.'); return; }
+  const code = '11111';
+  window.tenantEditorVerification[em] = { code, at: Date.now(), expires: Date.now()+5*60*1000 };
+  alert('Verification code (demo): ' + code);
+  const row = document.getElementById('te-verify-row'); if(row) row.classList.remove('hidden');
+  const st = document.getElementById('te-verify-status'); if(st) st.textContent = 'Code sent — expires in 5 minutes.';
+  const pin = document.getElementById('te-verify-code'); if(pin) setTimeout(()=>pin.focus(),60);
+  const submitBtn = document.getElementById('te-submit-btn'); if(submitBtn) submitBtn.disabled = true;
+}
+function verifyEditorTenantCode(){
+  const em = (document.getElementById('te-email').value||'').trim().toLowerCase();
+  const code = (document.getElementById('te-verify-code').value||'').trim();
+  if(!em || !code){ alert('Enter email and code.'); return; }
+  const rec = window.tenantEditorVerification[em];
+  if(!rec || rec.code !== code){ alert('Invalid or expired code.'); return; }
+  window.tenantEditorVerifiedEmail = em;
+  const st = document.getElementById('te-verify-status'); if(st) st.textContent = 'Verified ✓';
+  const row = document.getElementById('te-verify-row'); if(row) row.classList.add('hidden');
+  const submitBtn = document.getElementById('te-submit-btn'); if(submitBtn) submitBtn.disabled = false;
+  alert('Tenant email verified. You may save.');
 }
 
 // ====== PAYMENT MODAL HANDLERS ======
@@ -2177,6 +2680,44 @@ function handleTenantVerifySubmit(e){
   closeTenantVerifyModal();
   alert('Password set. You can now login with your email and password.');
 }
+
+// Tenant login code modal helpers
+function openTenantLoginCodeModal(email){
+  const em = (email||'').trim().toLowerCase();
+  document.getElementById('tlv-email-mask').textContent = maskEmailForDisplay(em);
+  document.getElementById('tlv-code').value = '';
+  document.getElementById('tenant-login-verify-modal').classList.remove('hidden');
+  try { document.getElementById('tlv-code').focus(); } catch(e){}
+}
+function closeTenantLoginVerifyModal(){ document.getElementById('tenant-login-verify-modal').classList.add('hidden'); }
+function verifyTenantLoginCode(){
+  const code = (document.getElementById('tlv-code').value||'').trim();
+  const pending = window._tenantPendingLogin || {};
+  const email = (pending.email||'').trim().toLowerCase();
+  if (!email || !code) { alert('Enter code.'); return; }
+  const rec = window.tenantVerification[email];
+  if(!rec || rec.code !== code){ alert('Invalid or expired code.'); return; }
+  // finalize login
+  const idx = pending.idx;
+  if (typeof idx === 'number' && tenants[idx]) {
+    currentTenantIndex = idx;
+    delete window._tenantPendingLogin;
+    delete window.tenantVerification[email];
+    closeTenantLoginVerifyModal(); closeTenantLogin(); showTenantDashboard();
+    return;
+  }
+  alert('Unable to complete login.');
+}
+
+function maskEmailForDisplay(email){
+  if(!email) return '';
+  const parts = email.split('@'); if(parts.length<2) return email;
+  const name = parts[0]; const domain = parts[1];
+  if (name.length <= 2) return name + '@' + domain;
+  return name.slice(0,2) + '****@' + domain;
+}
+// Run maintenance status reconciliation at load and periodically
+try{ maintenanceStatusReconcile(); setInterval(maintenanceStatusReconcile, 60*1000); }catch(e){}
 </script>
 </body>
 </html>
