@@ -419,6 +419,14 @@
           <div class="bg-white rounded-2xl p-4 shadow-sm border border-warm"><div class="text-navy/50 text-xs mb-1">Viewing Requests</div><div class="text-3xl font-display font-bold text-accent" id="admin-booking-count">0</div></div>
           <div class="bg-white rounded-2xl p-4 shadow-sm border border-warm"><div class="text-navy/50 text-xs mb-1">Current Tenants</div><div class="text-3xl font-display font-bold" id="admin-tenant-count">0</div></div>
         </div>
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-warm mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-display text-lg font-bold">Occupancy (Monthly)</h3>
+            <div class="text-sm text-navy/50">Next 6 months · Occupied units</div>
+          </div>
+          <div id="admin-occupancy-chart" class="w-full h-40"></div>
+          <div class="text-xs text-navy/50 mt-2">Number of occupied units per month (based on tenant lease ranges)</div>
+        </div>
         <h3 class="font-display text-lg font-bold mb-3">Recent Requests</h3>
         <div id="admin-recent-bookings" class="space-y-3"></div>
         <h3 class="font-display text-lg font-bold mb-3 mt-6">Recent Payments</h3>
@@ -428,6 +436,23 @@
         <div class="flex items-center justify-between mb-7 flex-wrap gap-3">
           <h2 class="font-display text-2xl md:text-3xl font-bold">Manage Units</h2>
           <button onclick="openUnitEditor()" class="px-5 py-2.5 bg-sage text-cream rounded-xl text-sm font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-md flex items-center gap-2"><i class="fas fa-plus text-xs"></i> Add Unit</button>
+        </div>
+        <div class="flex items-center gap-3 mb-4 flex-wrap">
+          <div class="flex-1 min-w-[220px]">
+            <input id="admin-unit-search" type="search" placeholder="Search units, description, amenities..." class="w-full px-4 py-2 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" oninput="adminUnitSearch=this.value;renderAUnits();" />
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="text-xs text-navy/60 mr-2">Status:</div>
+            <button onclick="setAdminFilter('status','all')" data-val="all" class="px-3 py-1 rounded-xl bg-white/5 text-sm btn-press">All</button>
+            <button onclick="setAdminFilter('status','active')" data-val="active" class="px-3 py-1 rounded-xl bg-white/5 text-sm btn-press">Active</button>
+            <button onclick="setAdminFilter('status','draft')" data-val="draft" class="px-3 py-1 rounded-xl bg-white/5 text-sm btn-press">Draft</button>
+          </div>
+          <div class="flex items-center gap-2 ml-auto md:ml-0">
+            <div class="text-xs text-navy/60 mr-2">Occupancy:</div>
+            <button onclick="setAdminFilter('occupancy','all')" data-val="all" class="px-3 py-1 rounded-xl bg-white/5 text-sm btn-press">All</button>
+            <button onclick="setAdminFilter('occupancy','vacant')" data-val="vacant" class="px-3 py-1 rounded-xl bg-white/5 text-sm btn-press">Vacant</button>
+            <button onclick="setAdminFilter('occupancy','occupied')" data-val="occupied" class="px-3 py-1 rounded-xl bg-white/5 text-sm btn-press">Occupied</button>
+          </div>
         </div>
         <div id="admin-units-list" class="space-y-3"></div>
       </div>
@@ -518,6 +543,23 @@
           </div>
         </div>
         <div><label class="block text-sm font-medium mb-1.5">Description</label><textarea id="ed-desc" rows="3" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none resize-none" placeholder="Brief description…"></textarea></div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Photos (up to 10)</label>
+          <div class="flex items-center gap-2">
+            <input id="ed-photos" type="file" accept="image/*" class="text-sm" multiple />
+            <div id="ed-photo-previews" class="grid gap-2"></div>
+            <div id="ed-photo-count" class="text-xs text-navy/60 ml-2">0/10</div>
+          </div>
+          <div class="text-xs text-navy/50 mt-1">Upload up to 10 images; thumbnails shown immediately.</div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Video (≤10s)</label>
+          <div class="flex items-center gap-2">
+            <input id="ed-video" type="file" accept="video/*" class="text-sm" />
+          </div>
+          <video id="ed-video-preview" class="hidden w-full h-36 mt-2 object-cover rounded-md border border-warm" controls></video>
+          <div id="ed-video-warning" class="text-xs text-accent hidden mt-1">Video must be 10 seconds or shorter.</div>
+        </div>
         <input type="hidden" id="ed-id">
         <div class="flex gap-3 pt-1">
           <button type="submit" class="flex-1 px-4 py-3 bg-navy text-cream rounded-xl text-base font-semibold hover:bg-opacity-90 transition-colors btn-press shadow-lg">Save Unit</button>
@@ -569,9 +611,8 @@
         <div><label class="block text-sm font-medium mb-1.5">Full Name</label><input id="te-name" type="text" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="Maria Santos"></div>
         <div>
           <label class="block text-sm font-medium mb-1.5">Email</label>
-          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2">
             <input id="te-email" type="email" required class="flex-1 px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="maria@email.com">
-            <button id="te-send-ver-btn" type="button" onclick="sendEditorTenantVerification(document.getElementById('te-email').value||'')" class="px-3 py-2 rounded-xl bg-warm text-sm btn-press">Send verification</button>
           </div>
           <div id="te-verify-row" class="hidden mt-2 flex items-center gap-2">
             <input id="te-verify-code" type="text" maxlength="6" placeholder="Enter code" class="px-3 py-2 rounded-xl border-2 border-warm focus:border-navy focus:outline-none w-40 text-sm">
@@ -580,6 +621,12 @@
           </div>
         </div>
         <div><label class="block text-sm font-medium mb-1.5">Phone</label><input id="te-phone" type="tel" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="0917-555-1234"></div>
+        <div><label class="block text-sm font-medium mb-1.5">Address</label><input id="te-address" type="text" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none" placeholder="Blk 12 Lot 3, Brgy Example, City"></div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Occupation / Type</label>
+          <input id="te-occupation" type="text" placeholder="e.g. Student, Police, IT Manager" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none">
+          <div class="text-xs text-navy/50 mt-1">Use this to note occupation or type (student, police, etc.)</div>
+        </div>
         <div>
           <label class="block text-sm font-medium mb-1.5">Password (optional)</label>
           <input id="te-password" type="password" placeholder="Set tenant password" class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none">
@@ -609,6 +656,18 @@
             <div class="text-xs text-navy/50 mt-1">Set the payment due date for this tenant (landlord defined). If unpaid by this date, status becomes Overdue.</div>
           </div>
         </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Upload ID (image/pdf)</label>
+            <div class="flex items-center gap-2">
+            <input id="te-id-file" type="file" accept="image/*,application/pdf" class="text-sm" />
+            <div id="te-id-previews" class="flex items-center gap-2">
+              <div class="flex flex-col items-center">
+                <img id="te-id-preview-0" src="" class="hidden w-28 h-20 object-cover rounded-md border border-warm" alt="ID preview" />
+                <div id="te-id-file-name-0" class="text-xs text-navy/60"></div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="block text-sm font-medium mb-1.5">Lease Start</label><input id="te-lease-start" type="date" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"></div>
           <div><label class="block text-sm font-medium mb-1.5">Lease End</label><input id="te-lease-end" type="date" required class="w-full px-4 py-2.5 rounded-xl border-2 border-warm text-sm focus:border-navy focus:outline-none"></div>
@@ -631,7 +690,36 @@
     </div>
   </div>
 
-  <!-- ====== BOOKING MODAL ====== -->
+    <!-- ====== ADMIN TENANT DETAIL MODAL ====== -->
+    <div id="admin-tenant-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
+      <div class="bg-white rounded-3xl shadow-xl border border-warm p-6 w-full max-w-md">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-display text-xl font-bold">Tenant Details</h3>
+          <button onclick="closeAdminTenantDetail()" class="p-2 hover:bg-warm rounded-xl transition-colors"><i class="fas fa-times text-sm"></i></button>
+        </div>
+        <div class="text-sm text-navy/60 mb-3">
+          <div class="font-semibold atd-name">Name</div>
+          <div class="text-xs atd-email mt-1">email@example.com</div>
+          <div class="text-xs mt-1">Phone: <span class="atd-phone">—</span></div>
+          <div class="text-xs mt-1">Unit: <span class="atd-unit">—</span></div>
+          <div class="text-xs mt-1">Lease: <span class="atd-lease">—</span></div>
+          <div class="text-xs mt-1">Status: <span class="atd-status">—</span></div>
+          <div class="text-xs mt-1">Last Paid: <span class="atd-lastpaid">—</span></div>
+          <div class="text-xs mt-1">Address: <span class="atd-address">—</span></div>
+          <div class="text-xs mt-1">Occupation: <span class="atd-occupation">—</span></div>
+        </div>
+        <div class="mb-3">
+          <div class="text-xs text-navy/60 mb-2">Uploaded ID</div>
+          <img id="atd-id-img" src="" class="hidden w-full h-40 object-contain rounded-md border border-warm" alt="ID image" />
+          <div id="atd-id-name" class="text-xs text-navy/60 mt-2"></div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="closeAdminTenantDetail()" class="flex-1 px-4 py-2 bg-warm rounded-xl btn-press">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== BOOKING MODAL ====== -->
   <div id="booking-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(15,27,45,0.55)">
     <div class="bg-cream rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-auto p-6 md:p-7">
       <div class="flex items-center justify-between mb-4">
@@ -829,57 +917,88 @@ const units = [
   { id:'u8', name:'Loft Central',      price:45000, sqm:80, beds:'2 BR',   floor:'18th Floor', amenities:['Pool','Gym','Balcony','WiFi'], description:'Spacious loft in the heart of the city.',                                       status:'active', color:'#be5c7a', capacity:2, video:'https://www.w3schools.com/html/mov_bbb.mp4' },
   { id:'u9', name:'Campus Studio',     price:12000, sqm:20, beds:'Studio', floor:'3rd Floor',  amenities:['WiFi'],                        description:'Affordable studio, great for students and young professionals.',                 status:'active', color:'#7aa34b', capacity:1, video:'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
   { id:'u10',name:'Skyline Duplex',    price:75000, sqm:120,beds:'2 BR',   floor:'28th Floor', amenities:['Pool','Gym','Parking','Balcony','WiFi'], description:'Two-level duplex with panoramic skyline views.',                               status:'active', color:'#4b79c8', capacity:4, video:'https://www.w3schools.com/html/mov_bbb.mp4' },
+  { id:'u11',name:'Harbor View Studio',price:16000, sqm:22, beds:'Studio', floor:'4th Floor', amenities:['WiFi','Parking'], description:'Cozy studio with partial harbor view and easy transit access.', status:'active', color:'#2b8f7a', capacity:1, video:'https://www.w3schools.com/html/mov_bbb.mp4' },
+  { id:'u12',name:'Elm Street 1BR',    price:24000, sqm:40, beds:'1 BR',   floor:'7th Floor',  amenities:['Gym','WiFi'], description:'Bright one-bedroom with efficient layout and city-side balcony.',           status:'active', color:'#a96b4d', capacity:2, video:'https://www.w3schools.com/html/mov_bbb.mp4' },
+  { id:'u13',name:'Cedar Loft',         price:33000, sqm:55, beds:'1 BR',   floor:'11th Floor', amenities:['Pool','Gym','Balcony'], description:'Loft-style 1BR with high ceilings and large windows.',                     status:'active', color:'#6b8fb0', capacity:2, video:'https://www.w3schools.com/html/mov_bbb.mp4'},
+  { id:'u14',name:'Maple 2BR Corner',   price:39000, sqm:70, beds:'2 BR',   floor:'9th Floor',  amenities:['Parking','Balcony','WiFi'], description:'Corner two-bedroom with extra light and street views.',                   status:'active', color:'#8b5e4f', capacity:3, video:'https://www.w3schools.com/html/mov_bbb.mp4' },
+  { id:'u15',name:'Orchard Pent Studio', price:14000, sqm:18, beds:'Studio', floor:'2nd Floor', amenities:['WiFi'], description:'Compact budget-friendly studio near campus and markets.',                 status:'active', color:'#7aa34b', capacity:1 },
+  { id:'u16',name:'Azure 2BR Suite',    price:47000, sqm:85, beds:'2 BR',   floor:'20th Floor', amenities:['Pool','Gym','Parking','WiFi'], description:'Modern two-bedroom suite with premium finishes and rooftop access.',    status:'active', color:'#3b6fb8', capacity:3, video:'https://www.w3schools.com/html/mov_bbb.mp4' }
 ];
 const bookings = [
   {
-    id: 'b_sample_pending',
+    id: 'b_elena_pending',
     unitName: 'Skyline Studio A',
-    name: 'Test Pending',
-    email: 'pending@example.com',
-    phone: '0917-000-0001',
+    name: 'Elena Santos',
+    email: 'elena.santos@example.com',
+    phone: '0917-555-0101',
     datetime: '2026-04-20T09:00',
     dateStr: '4/20/2026',
     timeStr: '9:00 AM',
-    message: 'I\'d like to see this studio.',
+    message: 'Interested in a morning viewing for this studio.',
     status: 'Pending'
   },
   {
-    id: 'b_sample_confirmed',
+    id: 'b_mark_confirmed',
     unitName: 'Horizon 1-Bedroom',
-    name: 'Test Confirmed',
-    email: 'confirmed@example.com',
-    phone: '0917-000-0002',
+    name: 'Mark Villanueva',
+    email: 'mark.villanueva@example.com',
+    phone: '0917-555-0202',
     datetime: '2026-04-22T14:00',
     dateStr: '4/22/2026',
     timeStr: '2:00 PM',
-    message: 'Looking forward to it.',
+    message: 'Confirmed for the afternoon slot. Please prepare unit brochure.',
     status: 'Confirmed'
   },
   {
-    id: 'b_sample_declined',
+    id: 'b_grace_declined',
     unitName: 'Garden Suite 2BR',
-    name: 'Test Declined',
-    email: 'declined@example.com',
-    phone: '0917-000-0003',
+    name: 'Grace Morales',
+    email: 'grace.morales@example.com',
+    phone: '0917-555-0303',
     datetime: '2026-04-18T11:00',
     dateStr: '4/18/2026',
     timeStr: '11:00 AM',
-    message: 'Please cancel my request.',
+    message: 'Unable to make the scheduled viewing, please cancel.',
     status: 'Declined'
   }
 ];
 const recentPayments = []; // { name, unit, amount, tax, total, date }
 const tenants  = [
-  { name:'Maria Santos', unit:'Horizon 1-Bedroom', leaseStart:'2024-06-01', leaseEnd:'2025-05-31', status:'Active',   email:'maria@email.com', phone:'0917-555-1234', paid:true,  lastPaid:'2024-12-01', dueDate:'2026-04-16', password:'1234' },
-  { name:'James Reyes',  unit:'Garden Suite 2BR',  leaseStart:'2024-09-15', leaseEnd:'2025-09-14', status:'Active',   email:'james@email.com', phone:'0918-555-5678', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
-  { name:'Anna Cruz',    unit:'Skyline Studio A',  leaseStart:'2024-01-01', leaseEnd:'2024-12-31', status:'Expiring', email:'anna@email.com',  phone:'0919-555-9012', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
-  { name:'Carl Tan',     unit:'Bayview 1-BR',      leaseStart:'2025-01-01', leaseEnd:'2025-12-31', status:'Active',   email:'carl@email.com',   phone:'0920-555-1111', paid:true,  lastPaid:'2025-03-01', dueDate:'2026-04-16', password:'1234' },
-  { name:'Liza Moreno',  unit:'Riverside 2BR',     leaseStart:'2024-11-01', leaseEnd:'2025-10-31', status:'Active',   email:'liza@email.com',   phone:'0921-555-2222', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
-  { name:'Ken Villan',   unit:'Loft Central',      leaseStart:'2025-02-01', leaseEnd:'2026-01-31', status:'Active',   email:'ken@email.com',    phone:'0922-555-3333', paid:true,  lastPaid:'2025-02-20', dueDate:'2026-04-16', password:'1234' },
-  { name:'May Lopez',    unit:'Campus Studio',     leaseStart:'2025-03-01', leaseEnd:'2026-02-28', status:'Active',   email:'may@email.com',    phone:'0923-555-4444', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
-  { name:'Rico Dela',    unit:'Skyline Duplex',    leaseStart:'2024-12-01', leaseEnd:'2025-11-30', status:'Active',   email:'rico@email.com',   phone:'0924-555-5555', paid:true,  lastPaid:'2025-03-10', dueDate:'2026-04-16', password:'1234' },
-  { name:'Ana Gutierrez',unit:'Penthouse Loft',   leaseStart:'2025-01-15', leaseEnd:'2026-01-14', status:'Active',   email:'ana@email.com',    phone:'0925-555-6666', paid:false, lastPaid:'', dueDate:'2026-04-16', password:'1234' },
+  { name:'Maria Santos',    unit:'Horizon 1-Bedroom', leaseStart:'2024-06-01', leaseEnd:'2025-05-31', status:'Active',   email:'maria.santos@example.com',    phone:'0917-555-1234', paid:true,  lastPaid:'2025-12-01', dueDate:'2026-04-16', password:'1234' },
+  { name:'James Reyes',     unit:'Garden Suite 2BR',  leaseStart:'2024-09-15', leaseEnd:'2025-09-14', status:'Expiring', email:'james.reyes@example.com',     phone:'0918-555-5678', paid:false, lastPaid:'2025-08-15', dueDate:'2026-04-16', password:'1234' },
+  { name:'Anna Cruz',       unit:'Skyline Studio A',  leaseStart:'2024-01-01', leaseEnd:'2024-12-31', status:'Expiring', email:'anna.cruz@example.com',       phone:'0919-555-9012', paid:false, lastPaid:'2025-11-20', dueDate:'2026-04-16', password:'1234' },
+  { name:'Carl Tan',        unit:'Bayview 1-BR',      leaseStart:'2025-01-01', leaseEnd:'2025-12-31', status:'Active',   email:'carl.tan@example.com',        phone:'0920-555-1111', paid:true,  lastPaid:'2026-02-28', dueDate:'2026-04-16', password:'1234' },
+  { name:'Liza Moreno',     unit:'Riverside 2BR',     leaseStart:'2024-11-01', leaseEnd:'2025-10-31', status:'Active',   email:'liza.moreno@example.com',     phone:'0921-555-2222', paid:false, lastPaid:'2025-09-10', dueDate:'2026-04-16', password:'1234' },
+  { name:'Ken Villan',      unit:'Loft Central',      leaseStart:'2025-02-01', leaseEnd:'2026-01-31', status:'Active',   email:'ken.villan@example.com',      phone:'0922-555-3333', paid:true,  lastPaid:'2026-01-15', dueDate:'2026-04-16', password:'1234' },
+  { name:'May Lopez',       unit:'Campus Studio',     leaseStart:'2025-03-01', leaseEnd:'2026-02-28', status:'Expiring', email:'may.lopez@example.com',       phone:'0923-555-4444', paid:false, lastPaid:'2025-12-05', dueDate:'2026-04-16', password:'1234' },
+  { name:'Rico Dela',       unit:'Skyline Duplex',    leaseStart:'2024-12-01', leaseEnd:'2025-11-30', status:'Active',   email:'rico.dela@example.com',       phone:'0924-555-5555', paid:true,  lastPaid:'2026-03-10', dueDate:'2026-04-16', password:'1234' },
+  { name:'Ana Gutierrez',   unit:'Penthouse Loft',    leaseStart:'2025-01-15', leaseEnd:'2026-01-14', status:'Expiring', email:'ana.gutierrez@example.com',   phone:'0925-555-6666', paid:false, lastPaid:'2025-11-30', dueDate:'2026-04-16', password:'1234' },
+  { name:'Jose Ramirez',    unit:'Metro Studio B',    leaseStart:'2023-05-01', leaseEnd:'2024-04-30', status:'Inactive', email:'jose.ramirez@example.com',    phone:'0926-555-7777', paid:false, lastPaid:'2024-04-01', dueDate:'2026-04-16', password:'1234' },
 ];
+// Randomize tenant lease start (Jan-Apr this year) and lease end (May, Dec this year, or end of next year)
+(function randomizeTenantLeases(){
+  try{
+    const now = new Date();
+    const y = now.getFullYear();
+    const choicesEnd = ['may','dec','next'];
+    tenants.forEach(t => {
+      // random start month Jan(1) - Apr(4)
+      const startMonth = 1 + Math.floor(Math.random()*4); // 1..4
+      const startDay = 1;
+      t.leaseStart = `${y}-${String(startMonth).padStart(2,'0')}-${String(startDay).padStart(2,'0')}`;
+      // choose end option
+      const endOpt = choicesEnd[Math.floor(Math.random()*choicesEnd.length)];
+      if (endOpt === 'may') {
+        t.leaseEnd = `${y}-05-31`;
+      } else if (endOpt === 'dec') {
+        t.leaseEnd = `${y}-12-31`;
+      } else {
+        // next year end -> December 31 next year
+        t.leaseEnd = `${y+1}-12-31`;
+      }
+    });
+  }catch(e){ console.warn('randomizeTenantLeases failed', e); }
+})();
 // Admin contact shown in tenant contact sections
 const ADMIN_CONTACT_EMAIL = 'admin@unityrent.com';
 const ADMIN_CONTACT_PHONE = '0917-000-0000';
@@ -901,7 +1020,21 @@ let unitSearch    = '';
 let editorBeds    = 'Studio';
 let editorAmenities = [];
 let editingUnitId = null;
-let nextUnitId    = 11;
+// compute next unit id from existing units to avoid duplicates
+let nextUnitId = 1;
+(function(){
+  try{
+    if (Array.isArray(units) && units.length) {
+      const nums = units.map(u => {
+        const m = (u.id||'').match(/^u(\d+)$/);
+        return m ? parseInt(m[1],10) : 0;
+      });
+      nextUnitId = Math.max(...nums) + 1;
+    } else {
+      nextUnitId = 1;
+    }
+  }catch(e){ nextUnitId = (units && units.length) ? units.length + 1 : 1; }
+})();
 let tenantFilter = 'all';
 let tenantSearch = '';
 let adminUnitSearch = '';
@@ -934,8 +1067,10 @@ function navigateTo(view) {
   document.getElementById('public-portal').classList.remove('hidden');
   document.getElementById('admin-login-view').classList.add('hidden');
   document.getElementById('admin-dashboard').classList.add('hidden');
-  ['home','units','detail','bookings','maintenance'].forEach(v =>
-    document.getElementById('view-'+v).classList.toggle('hidden', v !== view));
+  ['home','units','detail','bookings','maintenance'].forEach(v => {
+    const el = document.getElementById('view-'+v);
+    if (el) el.classList.toggle('hidden', v !== view);
+  });
   currentView = view;
   if (view==='units') {
     renderUnits();
@@ -1023,18 +1158,50 @@ function toggleFilters() {
 function aEmoji(a) { return ''; }
 
 function renderUnits() {
-  const grid     = document.getElementById('units-grid');
-  const filtered = getFiltered();
-  grid.innerHTML = '';
-  document.getElementById('no-units').classList.toggle('hidden', filtered.length > 0);
-  filtered.forEach(u => {
-    const c = document.createElement('div');
-    c.className = 'unit-card bg-white rounded-2xl overflow-hidden shadow-sm border border-warm cursor-pointer';
-    c.onclick = () => showDetail(u.id);
-    c.innerHTML = `
-      <div class="h-36 flex items-center justify-center" style="background:${u.color}20">
-        <div class="text-5xl"><i class="fas fa-bed"></i></div>
-      </div>
+  try {
+    const grid = document.getElementById('units-grid');
+    if (!grid) { console.warn('renderUnits: units-grid not found'); return; }
+    // Diagnostic: log unit status and tenant counts to help debug visibility issues
+    try{
+      units.forEach(u => {
+        const tc = Array.isArray(tenants) ? tenants.filter(t => t.unit === u.name).length : 0;
+        console.log('UNIT DEBUG:', u.id, u.name, 'status='+u.status, 'tenants='+tc);
+      });
+    }catch(e){ console.warn('renderUnits: diagnostic logging failed', e); }
+    const filteredRaw = getFiltered();
+    const filtered = Array.isArray(filteredRaw) ? filteredRaw : [];
+    try {
+      console.log('renderUnits: units=', units.length, 'filtered=', filtered.length, 'filters=', filters, 'unitSearch=', unitSearch);
+      console.log('renderUnits: filtered ids=', filtered.map(u => `${u.id}:${u.name}`).join(', '));
+    } catch(e) { console.warn('renderUnits: debug log failed', e); }
+    grid.innerHTML = '';
+
+    // Candidates: if search/filters returned nothing, consider active units; otherwise use filtered list
+    const candidates = (filtered.length === 0) ? units.filter(u => u.status === 'active') : filtered;
+    try { console.log('renderUnits: candidates ids=', candidates.map(u => `${u.id}:${u.name}`).join(', ')); } catch(e){}
+
+    // Only render units that currently have ZERO tenants (vacant)
+    const visible = candidates.filter(u => {
+      try { return (Array.isArray(tenants) ? tenants.filter(t => t.unit === u.name).length : 0) === 0; }
+      catch(e){ return false; }
+    });
+    try { console.log('renderUnits: visible (vacant) ids=', visible.map(u => `${u.id}:${u.name}`).join(', ')); } catch(e){}
+
+    // Show no-units when there are no vacant results
+    const noUnitsEl = document.getElementById('no-units'); if (noUnitsEl) noUnitsEl.classList.toggle('hidden', visible.length > 0);
+
+    visible.forEach(u => {
+      const c = document.createElement('div');
+      c.className = 'unit-card bg-white rounded-2xl overflow-hidden shadow-sm border border-warm cursor-pointer';
+      c.onclick = () => showDetail(u.id);
+      // build card HTML with image (if available) or color fallback
+      let topHtml = '';
+      if (u.images && u.images.length) {
+        topHtml = `<div class="h-36 overflow-hidden"><img src="${u.images[0]}" class="w-full h-36 object-cover" alt="${u.name}" /></div>`;
+      } else {
+        topHtml = `<div class="h-36 flex items-center justify-center" style="background:${u.color}20"><div class="text-5xl"><i class="fas fa-bed"></i></div></div>`;
+      }
+      c.innerHTML = topHtml + `
       <div class="p-4">
         <div class="flex items-start justify-between gap-2 mb-1.5">
           <h3 class="font-display text-lg font-bold leading-tight">${u.name}</h3>
@@ -1046,11 +1213,17 @@ function renderUnits() {
           <span class="text-navy/40 text-xs">/month</span>
         </div>
         <div class="flex gap-1 flex-wrap">
-          ${u.amenities.map(a=>`<span class="text-xs px-2 py-0.5 bg-warm rounded-md">${aEmoji(a)} ${a}</span>`).join('')}
+          ${(Array.isArray(u.amenities)?u.amenities:[]).map(a=>`<span class="text-xs px-2 py-0.5 bg-warm rounded-md">${aEmoji(a)} ${a}</span>`).join('')}
         </div>
       </div>`;
-    grid.appendChild(c);
-  });
+      grid.appendChild(c);
+      try {
+        const tc = Array.isArray(tenants) ? tenants.filter(t => t.unit === u.name).length : 0;
+        console.log('renderUnits: appended', u.id, u.name, 'tenants=', tc, 'children=', grid.children.length);
+      } catch(e){ console.warn('renderUnits: append log failed', e); }
+    });
+    console.log('renderUnits: final grid children=', grid.children.length);
+  } catch (err) { console.error('renderUnits error', err); }
 }
 
 // Utility: small badge for paid/unpaid
@@ -1326,20 +1499,20 @@ function promptVisitorInfoAndGo() {
     console.log('visitor modal element:', modal);
     if (!modal) { console.warn('visitor modal not found — falling back to units'); navigateTo('units'); return; }
     // prefill fields if any saved
-    if (window.visitor) {
+      if (window.visitor) {
       const vn = document.getElementById('v-name'); if (vn) vn.value = window.visitor.name || '';
       const ve = document.getElementById('v-email'); if (ve) ve.value = window.visitor.email || '';
       const vp = document.getElementById('v-phone'); if (vp) vp.value = window.visitor.phone || '';
-      // If email was previously verified, enable continue
+      // enable Continue when all fields are filled (verification optional)
       const contBtn = document.getElementById('v-continue-btn');
-      if (window.visitor.verifiedEmail && ve && contBtn) {
-        if ((ve.value||'').trim().toLowerCase() === (window.visitor.verifiedEmail||'').toLowerCase()) {
-          contBtn.disabled = false;
-          const st = document.getElementById('v-verify-status'); if(st) st.textContent = 'Verified ✓';
-        } else {
-          contBtn.disabled = true;
-        }
+      function updateContEnabled(){
+        const vnVal = (document.getElementById('v-name').value||'').trim();
+        const veVal = (document.getElementById('v-email').value||'').trim();
+        const vpVal = (document.getElementById('v-phone').value||'').trim();
+        if (contBtn) contBtn.disabled = !(vnVal && veVal && vpVal);
       }
+      ['v-name','v-email','v-phone'].forEach(id => { const el=document.getElementById(id); if(el) el.oninput = updateContEnabled; });
+      updateContEnabled();
     }
     // show modal (Tailwind 'hidden' toggle + explicit style fallback)
     modal.classList.remove('hidden');
@@ -1368,11 +1541,10 @@ function saveVisitorInfo(e) {
   const n = document.getElementById('v-name').value.trim();
   const em = document.getElementById('v-email').value.trim().toLowerCase();
   const p = document.getElementById('v-phone').value.trim();
-  // Require email verification
-  const verified = window.visitor && window.visitor.verifiedEmail === em;
-  if (!verified) { alert('Please verify your email before continuing. Click "Send verification" and enter the code.'); return; }
+  if (!n || !em || !p) { alert('Please fill name, email, and phone to continue.'); return; }
   console.log('saveVisitorInfo called', { name: n, email: em, phone: p });
-  window.visitor = { name:n, email:em, phone:p, verifiedEmail: em };
+  // Save visitor info; email verification is optional for browsing
+  window.visitor = { name:n, email:em, phone:p };
   console.log('visitor saved', window.visitor);
   closeVisitorModal();
   // If a booking was pending, open it now using saved visitor info
@@ -1541,6 +1713,44 @@ function renderGuestBookings() {
     cont.appendChild(div);
   });
 }
+  // ====== ADMIN TENANT DETAIL MODAL ======
+  // Modal HTML (inserted into DOM outside of script by placing here in file)
+  // We'll create the modal markup right after the tenant editor in the HTML portion.
+
+  // show tenant detail modal
+  function openAdminTenantDetail(idx){
+    const t = tenants[idx]; if(!t) return;
+    const m = document.getElementById('admin-tenant-detail-modal');
+    if(!m) return;
+    m.querySelector('.atd-name').textContent = t.name || '—';
+    m.querySelector('.atd-email').textContent = t.email || '—';
+    m.querySelector('.atd-phone').textContent = t.phone || '—';
+    m.querySelector('.atd-unit').textContent = t.unit || '—';
+    m.querySelector('.atd-lease').textContent = `${t.leaseStart||'—'} → ${t.leaseEnd||'—'}`;
+    m.querySelector('.atd-status').textContent = t.status || '—';
+    m.querySelector('.atd-lastpaid').textContent = t.lastPaid || '—';
+    m.querySelector('.atd-address').textContent = t.address || '—';
+    m.querySelector('.atd-occupation').textContent = t.occupation || '—';
+    const idImg = m.querySelector('#atd-id-img');
+    const idName = m.querySelector('#atd-id-name');
+    if (t.idFiles && Array.isArray(t.idFiles) && t.idFiles.length) {
+      // show concatenated filenames
+      if (idName) idName.textContent = t.idFiles.map(f=>f.name).join(', ');
+      // show first image if present
+      const firstImg = t.idFiles.find(f => typeof f.data === 'string' && f.data.indexOf('data:') === 0 && (f.type||'').indexOf('image/') === 0);
+      if (idImg && firstImg) { idImg.src = firstImg.data; idImg.classList.remove('hidden'); }
+      else if (idImg) { idImg.src=''; idImg.classList.add('hidden'); }
+    } else if (t.idData) {
+      if (t.idFileName && idName) idName.textContent = t.idFileName;
+      if (idImg && t.idData.indexOf('data:') === 0) { idImg.src = t.idData; idImg.classList.remove('hidden'); }
+      else if (idImg) { idImg.src=''; idImg.classList.add('hidden'); }
+    } else {
+      if (idImg) { idImg.src=''; idImg.classList.add('hidden'); }
+      if (idName) idName.textContent = '';
+    }
+    m.classList.remove('hidden');
+  }
+  function closeAdminTenantDetail(){ const m = document.getElementById('admin-tenant-detail-modal'); if(m) m.classList.add('hidden'); }
 
 function editBooking(id) {
   const b = bookings.find(x => x.id === id); if (!b) return;
@@ -1701,7 +1911,73 @@ function renderAO() {
       pcont.appendChild(dv);
     });
   }
+  // Render occupancy chart (monthly occupied units)
+  try { renderOccupancyChart(); } catch(e){ console.warn('renderAO: renderOccupancyChart failed', e); }
 }
+
+// Render a simple SVG line chart showing number of occupied units per month
+function renderOccupancyChart(months = 6) {
+  const container = document.getElementById('admin-occupancy-chart');
+  if (!container) return;
+  const now = new Date();
+  const labels = [];
+  const values = [];
+  for (let i = 0; i < months; i++) {
+    const start = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + i + 1, 0);
+    const count = tenants.reduce((acc, t) => {
+      try {
+        const ls = new Date(t.leaseStart);
+        const le = new Date(t.leaseEnd);
+        if (ls <= end && le >= start) return acc + 1;
+      } catch (e) {}
+      return acc;
+    }, 0);
+    labels.push(start.toLocaleString(undefined, { month: 'short' }));
+    values.push(count);
+  }
+
+  // Draw SVG
+  const width = Math.max(container.clientWidth, 480);
+  const height = 160;
+  const pad = 36;
+  const maxVal = Math.max(1, ...values);
+  let svg = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" class="w-full h-40">`;
+
+  // horizontal grid
+  for (let g = 0; g <= 4; g++) {
+    const y = pad + ((height - pad * 2) * (g / 4));
+    svg += `<line x1="${pad}" y1="${y}" x2="${width - pad}" y2="${y}" stroke="#eef2f7" stroke-width="1"/>`;
+  }
+
+  // compute points
+  const pts = values.map((v, i) => {
+    const x = pad + ((width - pad * 2) * (i / Math.max(1, values.length - 1)));
+    const y = pad + (1 - (v / maxVal)) * (height - pad * 2);
+    return { x, y };
+  });
+
+  // line path
+  const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+  svg += `<path d="${path}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+  // points + value labels
+  pts.forEach((p, i) => {
+    svg += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#3b82f6"/>`;
+    svg += `<text x="${p.x}" y="${p.y - 8}" font-size="11" fill="#0f172a" text-anchor="middle">${values[i]}</text>`;
+  });
+
+  // x labels
+  pts.forEach((p, i) => {
+    svg += `<text x="${p.x}" y="${height - 10}" font-size="11" fill="#556" text-anchor="middle">${labels[i]}</text>`;
+  });
+
+  svg += `</svg>`;
+  container.innerHTML = svg;
+}
+
+// Re-render chart on resize for responsiveness
+window.addEventListener('resize', () => { try { renderOccupancyChart(); } catch(e){} });
 
 function renderAUnits() {
   const cont = document.getElementById('admin-units-list'); cont.innerHTML = '';
@@ -1728,20 +2004,22 @@ function renderAUnits() {
   filtered.forEach(u => {
     const item = document.createElement('div');
     item.className = 'bg-white rounded-xl p-4 border border-warm flex flex-col gap-3';
-
+    const occCount = Array.isArray(tenants) ? tenants.filter(t=>t.unit===u.name).length : 0;
+    const capacity = u.capacity || 1;
     const header = document.createElement('div');
     header.className = 'flex items-center justify-between gap-3';
     header.onclick = () => toggleUnitTenants(u.id);
+    const occBadge = occCount >= capacity ? `<span class=" text-xs font-semibold  text-red-800">Occupied</span>` : '';
     header.innerHTML = `
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:${u.color}20"><i class="fas fa-bed"></i></div>
         <div>
-          <div class="text-sm font-semibold">${u.name}</div>
+          <div class="text-sm font-semibold">${u.name} ${occBadge}</div>
           <div class="text-xs text-navy/50">${u.beds} · ${u.sqm}sqm · ₱${u.price.toLocaleString()}/mo</div>
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <div class="text-xs text-navy/40 mr-2">Tenants: ${tenants.filter(t=>t.unit===u.name).length}/${u.capacity||1}</div>
+        <div class="text-xs text-navy/40 mr-2">Tenants: ${occCount}/${capacity}</div>
         <div class="flex items-center gap-2">
           <button onclick="event.stopPropagation();toggleUS('${u.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold btn-press transition-colors ${u.status==='active'?'bg-sage/10 text-sage hover:bg-sage/20':'bg-navy/5 text-navy/40 hover:bg-navy/10'}">${u.status==='active'?'● Active':'○ Draft'}</button>
           <button onclick="event.stopPropagation();openUnitEditor('${u.id}')" class="px-2.5 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press"><i class="fas fa-edit text-xs"></i></button>
@@ -1835,6 +2113,21 @@ function toggleUnitTenants(id) {
     panel.style.maxHeight = panel.scrollHeight + 'px';
   });
 }
+
+function setAdminFilter(type, val) {
+  try {
+    adminFilters[type] = val;
+    // update button styles inside admin-manage
+    document.querySelectorAll('#admin-manage button').forEach(b => {
+      const on = b.getAttribute('onclick') || '';
+      if (on.includes("setAdminFilter('" + type + "'")) {
+        const v = b.dataset.val || '';
+        b.classList.toggle('bg-white/15', v === val);
+      }
+    });
+    renderAUnits();
+  } catch (e) { console.warn('setAdminFilter failed', e); }
+}
 function setAdminUnitSearch(val){ adminUnitSearch = val || ''; renderAUnits(); }
 function clearAdminUnitSearch(){ const el = document.getElementById('admin-unit-search'); if(el) el.value=''; setAdminUnitSearch(''); }
 function toggleAdminFilters(){ const p = document.getElementById('admin-manage-filters'); const btn = document.getElementById('admin-filter-btn'); if(!p) return; const isHidden = p.classList.contains('hidden'); p.classList.toggle('hidden', !isHidden); if(btn) btn.classList.toggle('chip-active', !isHidden); }
@@ -1878,11 +2171,31 @@ function openUnitEditor(id) {
     document.getElementById('ed-id').value=u.id;
     document.getElementById('ed-capacity').value = u.capacity || 1;
     editorBeds=u.beds; editorAmenities=[...u.amenities];
+    // populate photo previews (grid, responsive)
+    const photoPreviews = document.getElementById('ed-photo-previews');
+    if(photoPreviews) {
+      photoPreviews.innerHTML='';
+      const imgs = (u.images && u.images.length) ? u.images.slice(0,10) : [];
+      const cols = Math.min(5, Math.max(1, imgs.length));
+      photoPreviews.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+      imgs.forEach(src=>{
+        const wrap = document.createElement('div'); wrap.className='w-full';
+        const img=document.createElement('img'); img.src=src; img.className='w-full h-20 object-cover rounded-md border border-warm';
+        wrap.appendChild(img); photoPreviews.appendChild(wrap);
+      });
+    }
+    const edCountEl = document.getElementById('ed-photo-count'); if (edCountEl) edCountEl.textContent = `${(u.images && u.images.length) ? Math.min(u.images.length,10) : 0}/10`;
+    // populate video preview
+    const vidPrev = document.getElementById('ed-video-preview'); const vidWarn = document.getElementById('ed-video-warning'); if(vidPrev){ if(u.video){ vidPrev.src = u.video; vidPrev.classList.remove('hidden'); if(vidWarn) vidWarn.classList.add('hidden'); } else { vidPrev.src=''; vidPrev.classList.add('hidden'); if(vidWarn) vidWarn.classList.add('hidden'); } }
   } else {
-    document.getElementById('editor-title').textContent='Add New Unit';
-    ['ed-name','ed-price','ed-sqm','ed-floor','ed-desc','ed-id'].forEach(i=>document.getElementById(i).value='');
-    document.getElementById('ed-capacity').value = 1;
-    editorBeds='Studio'; editorAmenities=[];
+  document.getElementById('editor-title').textContent='Add New Unit';
+  ['ed-name','ed-price','ed-sqm','ed-floor','ed-desc','ed-id'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('ed-capacity').value = 1;
+  editorBeds='Studio'; editorAmenities=[];
+  // clear previews for new unit
+  const photoPreviews = document.getElementById('ed-photo-previews'); if(photoPreviews) photoPreviews.innerHTML='';
+  const edCountEl = document.getElementById('ed-photo-count'); if (edCountEl) edCountEl.textContent = '0/10';
+  const vidPrev = document.getElementById('ed-video-preview'); const vidWarn = document.getElementById('ed-video-warning'); if(vidPrev){ vidPrev.src=''; vidPrev.classList.add('hidden'); if(vidWarn) vidWarn.classList.add('hidden'); }
   }
   updateEChips();
 }
@@ -1897,7 +2210,7 @@ function updateEChips(){
   document.querySelectorAll('.ed-beds-chip').forEach(c=>c.classList.toggle('chip-active',c.dataset.val===editorBeds));
   document.querySelectorAll('.amenity-chip').forEach(c=>c.classList.toggle('chip-active',editorAmenities.includes(c.dataset.val)));
 }
-function saveUnit(e){
+async function saveUnit(e){
   e.preventDefault();
   const colors=['#4a7c6f','#c8553d','#5b6abf','#b07d4b','#8b5e83','#d4764e','#6b8e5a'];
   const data={
@@ -1910,10 +2223,74 @@ function saveUnit(e){
     description:document.getElementById('ed-desc').value||'Beautiful condo unit available for rent.',
     capacity: parseInt(document.getElementById('ed-capacity').value) || 1,
   };
-  if(editingUnitId) Object.assign(units.find(x=>x.id===editingUnitId),data);
-  else units.push({id:'u'+(nextUnitId++), ...data, status:'active', color:colors[Math.floor(Math.random()*colors.length)]});
-  closeUnitEditor(); renderAUnits();
+  // handle photos (up to 10)
+  try{
+    const photoInput = document.getElementById('ed-photos');
+    const photoFiles = photoInput && photoInput.files ? Array.from(photoInput.files).slice(0,10) : [];
+    if(photoFiles.length>0){
+      const imgs = [];
+      for(const f of photoFiles){
+        try{ imgs.push(await readFileAsDataURL(f)); }catch(e){ console.warn('photo read failed', e); }
+      }
+      data.images = imgs;
+    }
+  }catch(e){ console.warn('photo handling error', e); }
+  // handle video (must be <= 10s)
+  try{
+    const videoInput = document.getElementById('ed-video');
+    const vFile = videoInput && videoInput.files && videoInput.files[0];
+    if(vFile){
+      const dur = await getVideoDuration(vFile);
+      if(dur > 10){ alert('Video must be 10 seconds or shorter.'); return; }
+      try{ data.video = await readFileAsDataURL(vFile); data.videoName = vFile.name; data.videoDuration = dur; }catch(e){ console.warn('video read failed', e); }
+    }
+  }catch(e){ console.warn('video handling error', e); }
+
+  if(editingUnitId){
+    const target = units.find(x=>x.id===editingUnitId);
+    if(target) Object.assign(target, data);
+  } else {
+    units.push({id:'u'+(nextUnitId++), ...data, status:'active', color:colors[Math.floor(Math.random()*colors.length)]});
+  }
+  closeUnitEditor(); renderAUnits(); renderUnits();
 }
+
+function readFileAsDataURL(file){
+  return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=()=>rej(fr.error); fr.readAsDataURL(file); });
+}
+function getVideoDuration(file){
+  return new Promise((res,rej)=>{
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video'); v.preload='metadata'; v.src = url;
+    v.onloadedmetadata = function(){ URL.revokeObjectURL(url); res(v.duration); };
+    v.onerror = function(e){ URL.revokeObjectURL(url); rej(e); };
+  });
+}
+// file input preview handlers
+/* legacy preview handler removed; new responsive grid handler is used below */
+{ const pEl = document.getElementById('ed-photos'); if(pEl) pEl.addEventListener('change', function(){
+    const previews = document.getElementById('ed-photo-previews');
+    const edCountEl = document.getElementById('ed-photo-count');
+    if(!previews) return;
+    previews.innerHTML='';
+    const files = Array.from(this.files).slice(0,10);
+    // determine number of columns (1..5)
+    const cols = Math.min(5, Math.max(1, files.length));
+    previews.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+    files.forEach(f=>{
+      if(!f.type.startsWith('image/')) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'w-full';
+      const img=document.createElement('img');
+      img.src = URL.createObjectURL(f);
+      img.className='w-full h-20 object-cover rounded-md border border-warm';
+      img.onload = ()=> URL.revokeObjectURL(img.src);
+      wrap.appendChild(img);
+      previews.appendChild(wrap);
+    });
+    if(edCountEl) edCountEl.textContent = `${files.length}/10`;
+  }); }
+{ const vEl = document.getElementById('ed-video'); if(vEl) vEl.addEventListener('change', function(){ const vPrev = document.getElementById('ed-video-preview'); const warn = document.getElementById('ed-video-warning'); const f = this.files && this.files[0]; if(!vPrev) return; if(!f){ vPrev.classList.add('hidden'); vPrev.src=''; if(warn) warn.classList.add('hidden'); return; } const tmp = document.createElement('video'); const url = URL.createObjectURL(f); tmp.preload='metadata'; tmp.src = url; tmp.onloadedmetadata = function(){ const dur = tmp.duration; if(dur > 10){ if(warn) warn.classList.remove('hidden'); } else { if(warn) warn.classList.add('hidden'); } vPrev.src = url; vPrev.classList.remove('hidden'); URL.revokeObjectURL(tmp.src); }; tmp.onerror = function(){ if(warn) warn.classList.remove('hidden'); vPrev.classList.add('hidden'); URL.revokeObjectURL(tmp.src); }; }); }
 
 function renderABookings(){
   const cont=document.getElementById('admin-bookings-list');
@@ -2011,10 +2388,12 @@ function renderATenants(){
       </div>
       <div class="flex items-center gap-2">
         <span class="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${sc}">${computedStatus}</span>
-        <button onclick="toggleTenantPayment(${idx})" class="px-2.5 py-1 rounded-full text-xs font-semibold ${payClass} btn-press">${payLabel}</button>
-        <button onclick="openTenantEditor(${idx})" class="px-2.5 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press"><i class="fas fa-edit text-xs"></i></button>
-        <button onclick="deleteTenant(${idx})" class="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors btn-press"><i class="fas fa-trash-alt text-xs"></i></button>
+        <button onclick="event.stopPropagation(); toggleTenantPayment(${idx})" class="px-2.5 py-1 rounded-full text-xs font-semibold ${payClass} btn-press">${payLabel}</button>
+        <button onclick="event.stopPropagation(); openTenantEditor(${idx})" class="px-2.5 py-1.5 rounded-xl bg-warm hover:bg-navy/10 transition-colors btn-press"><i class="fas fa-edit text-xs"></i></button>
+        <button onclick="event.stopPropagation(); deleteTenant(${idx})" class="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors btn-press"><i class="fas fa-trash-alt text-xs"></i></button>
       </div>`;
+    // clicking the row opens a detail modal for this tenant
+    div.onclick = () => openAdminTenantDetail(idx);
     cont.appendChild(div);
   });
 }
@@ -2141,7 +2520,30 @@ async function submitTenantMaintenancePage(e){
 }
 
 // preview for tenant maintenance page photo
-document.addEventListener('change', function(e){ if(e.target && e.target.id === 'tpage-photo'){ const f = e.target.files && e.target.files[0]; const p = document.getElementById('tpage-photo-preview'); if(f && p){ const r=new FileReader(); r.onload=()=>{ p.src = r.result; p.classList.remove('hidden'); }; r.readAsDataURL(f); } else if(p){ p.src=''; p.classList.add('hidden'); } } });
+document.addEventListener('change', function(e){
+  if (!e.target) return;
+  if (e.target.id === 'tpage-photo'){
+    const f = e.target.files && e.target.files[0]; const p = document.getElementById('tpage-photo-preview');
+    if(f && p){ const r=new FileReader(); r.onload=()=>{ p.src = r.result; p.classList.remove('hidden'); }; r.readAsDataURL(f); } else if(p){ p.src=''; p.classList.add('hidden'); }
+  }
+  if (e.target.id === 'te-id-file'){
+    const f = e.target.files && e.target.files[0];
+    const p = document.getElementById('te-id-preview-0');
+    const nameEl = document.getElementById('te-id-file-name-0');
+    if (f) {
+      if (nameEl) nameEl.textContent = f.name;
+      if (p && f.type.indexOf('image/') === 0) {
+        const r = new FileReader(); r.onload = () => { p.src = r.result; p.classList.remove('hidden'); }; r.readAsDataURL(f);
+      } else if (p) {
+        p.src = '';
+        p.classList.add('hidden');
+      }
+    } else {
+      if (p) { p.src=''; p.classList.add('hidden'); }
+      if (nameEl) nameEl.textContent = '';
+    }
+  }
+});
 function renderTenantMaintenanceList(){
   const el = document.getElementById('td-maintenance-requests'); if(!el) return; el.innerHTML='';
   const email = (currentTenantIndex!==null && tenants[currentTenantIndex]) ? tenants[currentTenantIndex].email : (window.visitor && window.visitor.email) || '';
@@ -2205,6 +2607,25 @@ function openTenantEditor(id){
     document.getElementById('te-lastpaid').value = t.lastPaid || '';
     document.getElementById('te-password').value = t.password || '';
     document.getElementById('te-due-date').value = t.dueDate || '';
+    document.getElementById('te-address').value = t.address || '';
+    document.getElementById('te-occupation').value = t.occupation || '';
+    // ID preview (single)
+    const p0 = document.getElementById('te-id-preview-0');
+    const n0 = document.getElementById('te-id-file-name-0');
+    if (t.idFiles && Array.isArray(t.idFiles) && t.idFiles.length) {
+      const f = t.idFiles[0];
+      if (f && f.data && p0) { p0.src = f.data; p0.classList.remove('hidden'); } else if (p0) { p0.src=''; p0.classList.add('hidden'); }
+      if (n0) n0.textContent = f ? f.name : '';
+    } else if (t.idData) {
+      if (p0) { p0.src = t.idData; p0.classList.remove('hidden'); }
+      if (n0) n0.textContent = t.idFileName || '';
+      if (n1) n1.textContent = '';
+    } else {
+      if (p0) { p0.src=''; p0.classList.add('hidden'); }
+      if (p1) { p1.src=''; p1.classList.add('hidden'); }
+      if (n0) n0.textContent = '';
+      if (n1) n1.textContent = '';
+    }
     document.getElementById('te-submit-btn').textContent='Update Tenant';
     // mark editor email as verified by default (editing existing tenant)
     window.tenantEditorVerifiedEmail = (t.email||'').toLowerCase();
@@ -2222,6 +2643,11 @@ function openTenantEditor(id){
     document.getElementById('te-submit-btn').textContent='Save Tenant';
     document.getElementById('te-password').value = '';
     document.getElementById('te-due-date').value = '';
+    document.getElementById('te-address').value = '';
+    document.getElementById('te-occupation').value = '';
+    const p0 = document.getElementById('te-id-preview-0'); if (p0) { p0.src=''; p0.classList.add('hidden'); }
+    const n0 = document.getElementById('te-id-file-name-0'); if (n0) n0.textContent = '';
+    const idInput = document.getElementById('te-id-file'); if (idInput) idInput.value = '';
   }
   // When email input changes, clear editor verification state
   const teEmailEl = document.getElementById('te-email');
@@ -2229,6 +2655,7 @@ function openTenantEditor(id){
     teEmailEl.oninput = function(){
       const v = (this.value||'').trim().toLowerCase();
       if (!v || window.tenantEditorVerifiedEmail !== v) {
+        // keep verification UI but do not require verification for saving
         window.tenantEditorVerifiedEmail = null;
         const tr = document.getElementById('te-verify-row'); if(tr) tr.classList.add('hidden');
         const st = document.getElementById('te-verify-status'); if(st) st.textContent='';
@@ -2236,7 +2663,7 @@ function openTenantEditor(id){
     };
   }
   // If creating new tenant, require verification before enabling save
-  const submitBtn = document.getElementById('te-submit-btn'); if(submitBtn){ if(typeof id==='number') submitBtn.disabled = false; else submitBtn.disabled = true; }
+  const submitBtn = document.getElementById('te-submit-btn'); if(submitBtn){ submitBtn.disabled = false; }
   updateTSChips();
 }
 function closeTenantEditor(){ document.getElementById('tenant-editor-modal').classList.add('hidden'); }
@@ -2245,7 +2672,7 @@ function updateTSChips(){
   const s=document.getElementById('te-status').value;
   document.querySelectorAll('.tenant-status-chip').forEach(c=>c.classList.toggle('chip-active',c.dataset.val===s));
 }
-function saveTenant(e){
+async function saveTenant(e){
   e.preventDefault();
   const id=document.getElementById('te-id').value;
   const data={
@@ -2261,14 +2688,25 @@ function saveTenant(e){
     dueDate: document.getElementById('te-due-date') ? document.getElementById('te-due-date').value : '',
     password: document.getElementById('te-password') ? document.getElementById('te-password').value : ''
   };
+  // extra fields
+  data.address = document.getElementById('te-address') ? document.getElementById('te-address').value : '';
+  data.occupation = document.getElementById('te-occupation') ? document.getElementById('te-occupation').value : '';
+  // handle ID upload (optional)
+  const idFileEl = document.getElementById('te-id-file');
+  if (idFileEl && idFileEl.files && idFileEl.files.length) {
+    const f = idFileEl.files[0];
+    data.idFiles = [];
+    try {
+      const dataUrl = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(f); });
+      data.idFiles.push({ data: dataUrl, name: f.name, type: f.type });
+    } catch(e) { console.warn('ID file read failed', e); }
+  }
   const emNormalized = (data.email||'').trim().toLowerCase();
   // Require email verification when creating a new tenant or when email changed
   if (!emNormalized) { alert('Please provide an email.'); return; }
   const origId = id!=='' ? parseInt(id) : null;
   const origEmail = (origId !== null && tenants[origId]) ? ((tenants[origId].email||'').toLowerCase()) : null;
-  if (origEmail !== emNormalized) {
-    if (window.tenantEditorVerifiedEmail !== emNormalized) { alert('Please verify the tenant email before saving. Click "Send verification" and enter the code.'); return; }
-  }
+  // verification is optional in admin-add flow; do not block save on verification
   // Prevent assigning when unit is full (account for edits)
   if (!data.unit) { alert('Please select a unit.'); return; }
   const unitObj = units.find(u=>u.name===data.unit);
@@ -2285,8 +2723,20 @@ function saveTenant(e){
     alert('This unit is already full. Choose another unit or increase its capacity.');
     return;
   }
-  if(id!==''){const idx=parseInt(id);if(tenants[idx])Object.assign(tenants[idx],data);} else tenants.push({...data});
-  closeTenantEditor(); renderATenants();
+  if(id!==''){
+    const idx=parseInt(id);
+    if(tenants[idx]){
+      // when editing, preserve existing id files/data if no new upload
+      if (!data.idFiles) {
+        if (tenants[idx].idFiles) data.idFiles = tenants[idx].idFiles;
+        else if (tenants[idx].idData) data.idFiles = [{ data: tenants[idx].idData, name: tenants[idx].idFileName || '', type: 'image/*' }];
+      }
+      Object.assign(tenants[idx],data);
+    }
+  } else {
+    tenants.push({...data});
+  }
+  closeTenantEditor(); renderATenants(); renderUnits();
 }
 function deleteTenant(id){
   const cont=document.getElementById('admin-tenants-list');
